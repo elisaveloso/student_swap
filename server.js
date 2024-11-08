@@ -19,6 +19,26 @@ app.get('/login', (req, res) => {
     res.render('login.ejs');
 });
 
+app.get('/register', (req, res) => {
+    res.render('register.ejs');
+});
+
+app.get('/checkout', (req, res) => {
+    res.render('checkout.ejs');
+}); 
+
+app.get('/products', (req, res) => {
+    res.render('products.ejs');
+});
+
+app.get('/confirmation', (req, res) => {
+    res.render('confirmation.ejs');
+});
+
+app.get('/shoppingcart', (req, res) => {
+    res.render('shoppingCart.ejs');
+});
+
 app.post('/login', (req, res) => {
     username = req.body.username;
     password = req.body.password;
