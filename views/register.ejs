@@ -4,8 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register</title>
+    <link rel="stylesheet" href="./css/register.css">
 </head>
 <body>
-    <h1>Register</h1>
+    <div class="back">
+        <a href="/">< Back to home</a>
+    </div>
+    <div class="container">
+        <div class="login-box">
+            <h2>Register</h2>
+            <form action="/register" method="POST">
+                <input type="text" name="username" id="username" placeholder="Username" required>
+                <input type="text" name="password" id="password" placeholder="Password" required>
+                <input type="text" name="password2" id="password2" placeholder="Confirm Password" required>
+                <input type="submit" value="Register">
+            </form>
+        </div>
+    </div>
 </body>
 </html>

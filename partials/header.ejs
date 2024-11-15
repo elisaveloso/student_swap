@@ -1,0 +1,18 @@
+<%# It works. Will add navigation later. %>
+<head>
+    <link rel="stylesheet" href="./css/header.css">
+</head>
+<nav>
+    <a href="/">Student Swap</a>
+    <div class="right">
+        <a href="/cart">Cart</a>
+        <% if (true)  {  //replace 'true' with '!loggedIn' later!!%>
+            <a href="/login">Login</a>
+            <a href="/register">Register</a>
+        <% } else{ %>
+            <a href="/profile">Profile</a>
+            <a href="/logout">Logout</a>
+        <% } %>
+    </div>
+    </ul>
+</nav>
