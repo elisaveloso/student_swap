@@ -1,4 +1,9 @@
-h1{
-    color: #c72626;
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
-
+h1{
+    color: #401c93;
+    font-weight: bold;
+}

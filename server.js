@@ -11,6 +11,17 @@ app.use(express.static('public'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+const nodemailer = require('nodemailer');
+var transporter = nodemailer.createTransport({
+    host: "live.smtp.mailtrap.io",
+    port: 587,
+    auth: {
+      user: "api",
+      pass: "1b9d0b0b6486e638d63760720f120ace"
+    }
+  });
+  
+
 app.get('/', (req, res) => {
     res.render('index.ejs');
 });
@@ -21,6 +32,52 @@ app.get('/login', (req, res) => {
 
 app.get('/register', (req, res) => {
     res.render('register.ejs');
+});
+
+app.post('/register', (req, res) => {
+
+    //generate a password. nine characters long and contains at least one upper case letter, one lower case letter and one number.
+    var password = "";
+    var upperCase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    var lowerCase = "abcdefghijklmnopqrstuvwxyz";
+    var numbers = "0123456789";
+    var all = upperCase + lowerCase + numbers;
+    for (var i = 0; i < 9; i++) {
+        if (i == 0) {
+            password += upperCase.charAt(Math.floor(Math.random() * upperCase.length));
+        } else if (i == 1) {
+            password += lowerCase.charAt(Math.floor(Math.random() * lowerCase.length));
+        } else if (i == 2) {
+            password += numbers.charAt(Math.floor(Math.random() * numbers.length));
+        } else {
+            password += all.charAt(Math.floor(Math.random() * all.length));
+        }
+    }
+
+    console.log(password);
+    var username = req.body.username;
+    var email = req.body.email;
+
+    //save the user to the database
+    
+
+    //Sending email works, don't need to test it every time.
+    /*var mailOptions = {
+        from: 'studentswap@demomailtrap.com',
+        to: email,
+        subject: 'Welcome to StudentSwap!',
+        text: `Hello ${username}! \nThank you for registering an account at StudentSwap!\nHere is your password that you should use to log in the first time: ${password}`
+      };
+      
+      transporter.sendMail(mailOptions, function(error, info){
+        if (error) {
+          console.log(error);
+        } else {
+          console.log('Email sent: ' + info.response);
+        }
+      });*/
+
+    res.redirect('/login');
 });
 
 app.get('/checkout', (req, res) => {
