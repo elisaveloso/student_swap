@@ -1,5 +1,5 @@
 const express = require('express');
-const mysql2 = require('mysql2');
+const mysql = require('mysql2');
 const ejs = require('ejs');
 const bodyParser = require('body-parser');
 const app = express();
@@ -20,8 +20,25 @@ var transporter = nodemailer.createTransport({
       pass: "1b9d0b0b6486e638d63760720f120ace"
     }
   });
-  
 
+
+// Create the connection to database
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: '@RU7.aPA1N4k',
+    database: 'studentswap'
+});
+
+db.connect((err) => {
+    if (err) {
+      console.error('Error connecting to database:', err);
+      return;
+    }
+    console.log('Connected to MySQL database "' + db.config.database + '" at', db.config.host, 'as', db.config.user);
+  });
+
+  
 app.get('/', (req, res) => {
     res.render('index.ejs');
 });
@@ -57,11 +74,19 @@ app.post('/register', (req, res) => {
     console.log(password);
     var username = req.body.username;
     var email = req.body.email;
-
-    //save the user to the database
     
+    //save the user to the database
+    try {
+        const [result] = db.execute(
+        'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
+        [username, email, password]
+      );
+    } catch (error) {
+        console.log('Error saving user to database:', error);
+        res.send('Error saving user to database:', error);
+    }
 
-    //Sending email works, don't need to test it every time.
+    //Sending email works, we don't need to test it every time.
     /*var mailOptions = {
         from: 'studentswap@demomailtrap.com',
         to: email,
