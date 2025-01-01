@@ -4,12 +4,16 @@ const ejs = require('ejs');
 const bodyParser = require('body-parser');
 const app = express();
 const port = 3000;
+const session = require('express-session');
+const crypto = require('crypto-js');
 
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+
+firstLogin = false;
 
 const nodemailer = require('nodemailer');
 var transporter = nodemailer.createTransport({
@@ -19,8 +23,7 @@ var transporter = nodemailer.createTransport({
       user: "api",
       pass: "1b9d0b0b6486e638d63760720f120ace"
     }
-  });
-
+});
 
 // Create the connection to database
 const db = mysql.createConnection({
@@ -36,15 +39,81 @@ db.connect((err) => {
       return;
     }
     console.log('Connected to MySQL database "' + db.config.database + '" at', db.config.host, 'as', db.config.user);
-  });
+});
 
-  
+//Session setup
+app.use(session({
+    secret: '=PQ7$LK2mcAXqaLATRMDlRYI9CugLz+N',
+    resave: false,
+    saveUninitialized: true
+}));
+
+// Middleware so that the user variables are always available in the views
+app.use((req, res, next) => {
+    res.locals.user = req.session.user || null; // Set user or null if not logged in
+    next(); // Proceed to the next middleware or route handler
+});
+
+// Middleware to check if the user is logged in and otherwise redirect to login
+function isAuthenticated(req, res, next) {
+    if (req.session.user) {
+        return next(); // User is logged in, proceed to the next middleware or route handler
+    }
+    res.redirect('/login'); // Redirect to login page if not logged in
+}
+
+// Routes
 app.get('/', (req, res) => {
     res.render('index.ejs');
 });
 
 app.get('/login', (req, res) => {
-    res.render('login.ejs');
+    if (req.session.user) {
+        res.redirect('/');
+        return;
+    }
+    if (firstLogin) {
+        res.render('login.ejs', {error: 'Check your email for your password'});
+        firstLogin = false;
+        return;
+    }
+    res.render('login.ejs', {error: ''});
+});
+
+app.get('/logout', (req, res) => {
+    req.session.destroy();
+    res.redirect('/');
+});
+
+app.post('/login', (req, res) => {
+    const { email, password } = req.body;
+    redirectValue = '/products';
+    const query = 'SELECT * FROM users WHERE email = ? AND hashedPassword = ?';
+    const values = [email, password];
+    db.execute(query, values, (err, results) => {
+        if (err) {
+            console.error('Database error:', err);
+            return;
+        }
+
+        if (results.length === 0) {
+            console.log('Login failed');
+            res.render('login.ejs', { error: 'Invalid email or password' });
+            return;
+        }
+
+        const user = results[0];
+        console.log('Login successful:', user);
+
+        if (user.needsToChangePassword === 1) {
+            console.log('First login');
+            redirectValue = '/set-password'
+        }
+
+        req.session.user = user;
+        console.log(redirectValue);
+        res.redirect(redirectValue);
+    });
 });
 
 app.get('/register', (req, res) => {
@@ -53,6 +122,36 @@ app.get('/register', (req, res) => {
 
 app.post('/register', (req, res) => {
 
+    const { firstName, lastName, email, screenResolution, os } = req.body;
+    
+    width = screenResolution.width;
+    height = screenResolution.height;
+
+    console.log('Registering user:', firstName, lastName, email, password, width, height, os);
+
+    var password = generatePassword(); 
+    console.log('Generated password for user:', password);
+
+    sendEmail(email , password, firstName, lastName);
+    
+    //sha512 the password before storing it in the database
+    password = crypto.SHA512(password).toString(crypto.enc.Hex);
+    console.log('Hashed password:', password)
+
+    const query = 'INSERT INTO users (firstName, lastName, email, hashedPassword, width, height, operatingSystem) VALUES (?, ?, ?, ?, ?, ?, ?)';
+    const values = [firstName, lastName, email, password, width, height, os];
+
+    db.execute(query, values, (err, results) => {
+        if (err) {
+            console.error('Database error:', err);
+            return;
+        }
+        console.log('Insert successful:', results);
+        res.redirect('/login');
+    });
+});
+
+function generatePassword() {
     //generate a password. nine characters long and contains at least one upper case letter, one lower case letter and one number.
     var password = "";
     var upperCase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -70,39 +169,29 @@ app.post('/register', (req, res) => {
             password += all.charAt(Math.floor(Math.random() * all.length));
         }
     }
+    return password;
+}
 
-    console.log(password);
-    var username = req.body.username;
-    var email = req.body.email;
-    
-    //save the user to the database
-    try {
-        const [result] = db.execute(
-        'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
-        [username, email, password]
-      );
-    } catch (error) {
-        console.log('Error saving user to database:', error);
-        res.send('Error saving user to database:', error);
-    }
-
-    //Sending email works, we don't need to test it every time.
-    /*var mailOptions = {
+function sendEmail(email, password, firstName, lastName) {
+    //send an email to the user with the generated password
+    var mailOptions = {
         from: 'studentswap@demomailtrap.com',
         to: email,
         subject: 'Welcome to StudentSwap!',
-        text: `Hello ${username}! \nThank you for registering an account at StudentSwap!\nHere is your password that you should use to log in the first time: ${password}`
+        text: `Hello ${firstName} ${lastName}! \nThank you for registering an account at StudentSwap!\nHere is your password that you should use to log in the first time: ${password}`
       };
       
-      transporter.sendMail(mailOptions, function(error, info){
-        if (error) {
-          console.log(error);
-        } else {
-          console.log('Email sent: ' + info.response);
-        }
-      });*/
+    transporter.sendMail(mailOptions, function(error, info){
+      if (error) {
+        console.log(error);
+      } else {
+        console.log('Email sent: ' + info.response);
+      }
+    });
+}
 
-    res.redirect('/login');
+app.get('/profile', isAuthenticated, (req, res) => {
+    res.render('profile.ejs');
 });
 
 app.get('/checkout', (req, res) => {
@@ -121,17 +210,30 @@ app.get('/shoppingcart', (req, res) => {
     res.render('shoppingCart.ejs');
 });
 
-app.post('/login', (req, res) => {
-    username = req.body.username;
-    password = req.body.password;
-    
-    // TODO: remake to use database
-    if (username == 'admin' && password == 'admin') {
-        res.send('Login Success');
-    } else {
-        res.send('Login Failed');
+app.get('/set-password', (req, res) => {
+    res.render('setPassword.ejs');
+});
+
+app.post('/set-password', (req, res) => {
+    const { password } = req.body;
+    if (password.length < 9) {
+        res.render('setPassword.ejs', {error: 'Password must be at least 9 characters long'});
     }
-    console.log('Login attempted with Username: ' + username + ' and Password: ' + password);
+    else {
+        const query = 'UPDATE users SET hashedPassword = ? WHERE email = ?';
+        const values = [password, req.session.user.email];
+        db.execute(query, values, (err, results) => {
+            if (err) {
+                console.error('Database error:', err);
+                return;
+            }
+            console.log('Password set:', results);
+            const updateQuery = 'UPDATE users SET needsToChangePassword = 0 WHERE email = ?';
+            db.execute(updateQuery, [req.session.user.email]);
+            console.log('needsToChangePassword updated to 0');
+            res.redirect('/products');
+        });
+    }
 });
 
 app.listen(port, () => {

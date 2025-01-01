@@ -1,0 +1,13 @@
+services:
+  mysql:
+    container_name: mysql
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_DATABASE: "studentswap"
+      MYSQL_ROOT_PASSWORD: "@RU7.aPA1N4k"
+    ports:
+    - "3306:3306"
+    volumes:
+    # Mounts the init.sql file to docker entrypoint - runs the query on startup
+    - ./init.sql:/docker-entrypoint-initdb.d/init.sql
