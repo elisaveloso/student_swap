@@ -199,8 +199,47 @@ app.get('/checkout', (req, res) => {
 }); 
 
 app.get('/products', (req, res) => {
-    res.render('products.ejs');
+
+    //if user is not logged in an tries to add a product to the cart, redirect to login
+
+    const query = 'SELECT * FROM products';
+    db.execute(query, (err, results) => {
+        if (err) {
+            console.error('Database error:', err);
+            return;
+        }
+        console.log('Products:', results);
+        res.render('products.ejs', { products: results });
+    });
 });
+
+app.get('/products/add/:id', isAuthenticated, (req, res) => {
+    const productId = req.params.id;
+    const userId = req.session.user.id;
+    //not sure if query is correct
+    const query = 'INSERT INTO cartItems (cartId, productId) VALUES ((SELECT id FROM carts WHERE userId = ?), ?)';
+    db.execute(query, [userId, productId], (err, results) => {
+        if (err) {
+            console.error('Database error:', err);
+            return;
+        }
+        console.log('Product added to cart:', results);
+        //is redirect or render needed?
+        return;
+    });
+});
+
+//create a cart for the user in the database
+function createCart(userId) {
+    const query = 'INSERT INTO carts (userId) VALUES (?)';
+    db.execute(query, [userId], (err, results) => {
+        if (err) {
+            console.error('Database error:', err);
+            return;
+        }
+        console.log('Cart created:', results);
+    });
+}
 
 app.get('/confirmation', (req, res) => {
     res.render('confirmation.ejs');

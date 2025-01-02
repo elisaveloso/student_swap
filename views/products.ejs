@@ -5,39 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Products</title>
     <link rel="stylesheet" href="./css/index.css">
-    <link rel="stylesheet" href="./css/bootstrap/bootstrap.min.css">
     <link rel="stylesheet" href="./css/products.css">
+    <link rel="stylesheet" href="./css/bootstrap/bootstrap.min.css">
 </head>
 <body>
     <%- include('../partials/header.ejs') %>
     <div class="main">
         <h1>Products</h1>
     <div class="products">
-    <% 
-        products = [
-            { name: 'Product 1', image: 'image1.jpg', description: 'Description 1', price: 10, quantity: 100 },
-            { name: 'Product 2', image: 'image2.jpg', description: 'Description 2', price: 20, quantity: 200 },
-            { name: 'Product 3', image: 'image3.jpg', description: 'Description 3', price: 30, quantity: 300 },
-            { name: 'Product 4', image: 'image4.jpg', description: 'Description 4', price: 40, quantity: 400 },
-            { name: 'Product 5', image: 'image5.jpg', description: 'Description 5', price: 50, quantity: 500 },
-            { name: 'Product 6', image: 'image6.jpg', description: 'Description 6', price: 60, quantity: 600 },
-            { name: 'Product 7', image: 'image7.jpg', description: 'Description 7', price: 70, quantity: 700 },
-            { name: 'Product 8', image: 'image8.jpg', description: 'Description 8', price: 80, quantity: 800 },
-            { name: 'Product 9', image: 'image9.jpg', description: 'Description 9', price: 90, quantity: 900 },
-            { name: 'Product 10', image: 'image10.jpg', description: 'Description 10', price: 100, quantity: 1000 }
-        ]; 
-    %>
     <% for (let i = 0; i < products.length; i++) { %>
         <div class="product">
             <h3><%= products[i].name %></h3>
-            <img src="<%= products[i].image %>" alt="image <%= i+1 %>" >
+            <img src="<%= products[i].imageURL %>" alt="image <%= i+1 %>" >
             <p class="description"><%= products[i].description %></p>
             <p class="price">Price: $<%= products[i].price %></p>
             <p class="quantity">Quantity: <%= products[i].quantity %></p>
             <div class="quantitySelector">
                 <button class="minusItem">-</button><input type="text" class="quantityInput" placeholder="0"><button class="plusItem">+</button>
             </div>
-            <button class="addToCart">Add to cart</button>
+            <a href="/products/add/<%=products[i].id%>"><button class="addToCart">Add to cart</button></a>
         </div>
     <% } %>
 
