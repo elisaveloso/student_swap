@@ -80,11 +80,6 @@ app.get('/login', (req, res) => {
     res.render('login.ejs', {error: ''});
 });
 
-app.get('/logout', (req, res) => {
-    req.session.destroy();
-    res.redirect('/');
-});
-
 app.post('/login', (req, res) => {
     const { email, password } = req.body;
     redirectValue = '/products';
@@ -110,10 +105,20 @@ app.post('/login', (req, res) => {
             redirectValue = '/set-password'
         }
 
+        //update the last login time
+        const updateQuery = 'UPDATE users SET lastLogin = NOW() WHERE email = ?';
+        db.execute(updateQuery, [email]);
+        
+        // Manually update the last login time in the user object used for the session
+        user.lastLogin = new Date();
         req.session.user = user;
-        console.log(redirectValue);
         res.redirect(redirectValue);
     });
+});
+
+app.get('/logout', (req, res) => {
+    req.session.destroy();
+    res.redirect('/');
 });
 
 app.get('/register', (req, res) => {
@@ -140,7 +145,6 @@ app.post('/register', (req, res) => {
 
     const query = 'INSERT INTO users (firstName, lastName, email, hashedPassword, width, height, operatingSystem) VALUES (?, ?, ?, ?, ?, ?, ?)';
     const values = [firstName, lastName, email, password, width, height, os];
-
     db.execute(query, values, (err, results) => {
         if (err) {
             console.error('Database error:', err);
@@ -199,16 +203,12 @@ app.get('/checkout', (req, res) => {
 }); 
 
 app.get('/products', (req, res) => {
-
-    //if user is not logged in an tries to add a product to the cart, redirect to login
-
     const query = 'SELECT * FROM products';
     db.execute(query, (err, results) => {
         if (err) {
             console.error('Database error:', err);
             return;
         }
-        console.log('Products:', results);
         res.render('products.ejs', { products: results });
     });
 });

@@ -23,9 +23,105 @@ CREATE TABLE IF NOT EXISTS products (
     description TEXT,
     price DECIMAL(10, 2) NOT NULL,
     quantity INT NOT NULL CHECK (quantity >= 0), -- Ensure non-negative quantity
-    imageURL VARCHAR(255) DEFAULT NULL,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    imageURL VARCHAR(255) DEFAULT NULL
+);
+
+INSERT INTO products(
+    name,
+    description,
+    price,
+    quantity,
+    imageURL
+) VALUES (
+    'MacBook Pro',
+    'A powerful laptop for professionals',
+    1999.99,
+    10,
+    'https://via.placeholder.com/150'
+), (
+    'iPhone 12',
+    'The latest iPhone model',
+    999.99,
+    20,
+    'https://via.placeholder.com/150'
+), (
+    'iPad Pro',
+    'A powerful tablet for professionals',
+    799.99,
+    15,
+    'https://via.placeholder.com/150'
+), (
+    'Apple Watch Series 6',
+    'The latest Apple Watch model',
+    399.99,
+    30,
+    'https://via.placeholder.com/150'
+), (
+    'AirPods Pro',
+    'The latest AirPods model',
+    249.99,
+    40,
+    'https://via.placeholder.com/150'
+), (
+    'iMac',
+    'A powerful desktop computer',
+    1799.99,
+    5,
+    'https://via.placeholder.com/150'
+), (
+    'Mac Mini',
+    'A compact desktop computer',
+    699.99,
+    8,
+    'https://via.placeholder.com/150'
+), (
+    'HomePod Mini',
+    'A smart speaker for your home',
+    99.99,
+    25,
+    'https://via.placeholder.com/150'
+), (
+    'Apple TV 4K',
+    'A streaming device for your TV',
+    179.99,
+    12,
+    'https://via.placeholder.com/150'
+), (
+    'Magic Keyboard',
+    'A wireless keyboard for your Mac',
+    99.99,
+    20,
+    'https://via.placeholder.com/150'
+), (
+    'Magic Mouse',
+    'A wireless mouse for your Mac',
+    79.99,
+    15,
+    'https://via.placeholder.com/150'
+), (
+    'Apple Pencil',
+    'A stylus for your iPad',
+    99.99,
+    10,
+    'https://via.placeholder.com/150'
+), (
+    'Apple Leather Case',
+    'A protective case for your iPhone',
+    49.99,
+    30,
+    'https://via.placeholder.com/150'
+), (
+    'Apple Smart Folio',
+    'A protective case for your iPad',
+    79.99,
+    20,
+    'https://via.placeholder.com/150'
+), (
+    'Apple Watch Band',
+    'A stylish band for your Apple Watch',
+    49.99,
+    25,
+    'https://via.placeholder.com/150'
 );
 
 -- Carts table (links to users)

@@ -21,7 +21,9 @@
             <p class="price">Price: $<%= products[i].price %></p>
             <p class="quantity">Quantity: <%= products[i].quantity %></p>
             <div class="quantitySelector">
-                <button class="minusItem">-</button><input type="text" class="quantityInput" placeholder="0"><button class="plusItem">+</button>
+                <button class="minusItem">-</button>
+                <input type="text" class="quantityInput" value="1">
+                <button class="plusItem">+</button>
             </div>
             <a href="/products/add/<%=products[i].id%>"><button class="addToCart">Add to cart</button></a>
         </div>
