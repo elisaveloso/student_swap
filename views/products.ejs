@@ -19,16 +19,19 @@
             <img src="<%= products[i].imageURL %>" alt="image <%= i+1 %>" >
             <p class="description"><%= products[i].description %></p>
             <p class="price">Price: $<%= products[i].price %></p>
-            <p class="quantity">Quantity: <%= products[i].quantity %></p>
-            <div class="quantitySelector">
-                <button class="minusItem">-</button>
-                <input type="text" class="quantityInput" value="1">
-                <button class="plusItem">+</button>
+            <p>Quantity: <span id="stock-<%= i+1 %>"><%= products[i].quantity %></span></p>
+
+            <div class="quantity-selector">
+                <button class="decrement">-</button>
+                <input type="text" id="quantity-<%=i+1%>" value="1">
+                <button class="increment">+</button>
             </div>
-            <a href="/products/add/<%=products[i].id%>"><button class="addToCart">Add to cart</button></a>
+
+            <button class="add-to-cart" data-product-id="<%=i+1%>" type="submit">Add to cart</button>
         </div>
     <% } %>
 
     </div>
+    <script src="./js/products.js"></script>
 </body>
 </html>

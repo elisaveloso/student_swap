@@ -33,7 +33,7 @@ document.getElementById('registrationForm').addEventListener('submit', async (ev
         };
 
         // Send data to the backend
-        const response = await fetch("http://localhost:3000/register", {
+        let response = await fetch("http://localhost:3000/register", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -44,19 +44,19 @@ document.getElementById('registrationForm').addEventListener('submit', async (ev
         // Check response status
         if (response.redirected) {
             // Manually handle redirect
+            console.log("Redirecting to:", response.url);
             window.location.href = response.url;
-        } else {
-            const responseData = await response.json();
-            if (responseData.error) {
-                console.error('Registration error:', responseData.error);
-                alert(responseData.error); // Show error to user
-            } else {
-                // Redirect to login or home if success
-                window.location.href = "/login"; // Adjust based on your app
-            }
         }
-    } catch (err) {
-        console.error('An error occurred:', err);
-        alert('Something went wrong. Please try again.');
+        
+        //if it's not a redirect, then the user already exists
+        else if (response.status === 200) {
+            // Manually handle error
+            console.log("Registration failed");
+            const error = await response.text();
+            document.getElementById('message').innerText = "A user with that email already exists";
+        }
+    }
+    catch (error) {
+        console.error("Error:", error);
     }
 });

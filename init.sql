@@ -13,7 +13,8 @@ CREATE TABLE IF NOT EXISTS users (
     width INT NOT NULL,
     height INT NOT NULL,
     operatingSystem VARCHAR(32),
-    needsToChangePassword BOOLEAN DEFAULT TRUE
+    needsToChangePassword BOOLEAN DEFAULT TRUE,
+    isOnline BOOLEAN DEFAULT FALSE
 );
 
 -- Products table

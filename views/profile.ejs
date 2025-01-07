@@ -9,5 +9,8 @@
     <%- include('../partials/header.ejs') %>
     <h1>Hello <%=user.firstName%> <%= user.lastName %>!</h1>
     <p>Last login: <%=user.lastLogin%></p>
+    <p>Email: <%=user.email%></p>
+    <p>Online users: <span id="onlineCount">0</span></p>
+    <script src="./js/onlineUsers.js"></script>
 </body>
 </html>
