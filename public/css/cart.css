@@ -1,0 +1,17 @@
+.items{
+    width: 100%;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 5vh;
+}
+
+.item{
+    width: 50%;
+    border: 2px solid black;
+}
+
+.stock {
+    font-size: 12px;
+    color: lightgray;
+}

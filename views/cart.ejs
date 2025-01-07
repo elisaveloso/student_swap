@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="./css/cart.css">
+    <link rel="stylesheet" href="./css/products.css">
+</head>
+<body>
+    <%- include('../partials/header.ejs') %>
+    <div class="items">
+        <% if (cartItems.length === 0) { %>
+            <p>No items in cart. <a href="/products">Browse products</a></p>
+        <% } %>
+        <% for (let i = 0; i < cartItems.length; i++) { %>
+            <div class="item" data-item-id="<%=cartItems[i].id%>">
+                <button class="remove-item">X</button>
+                <p>Name: <%=cartItems[i].name%></p>
+                <p>Price: $<%=cartItems[i].price%></p>
+                <div class="quantity-selector">
+                    <button class="decrement">-</button>
+                    <input type="text" id="quantity-<%=i+1%>" value="<%=cartItems[i].quantity%>">
+                    <button class="increment">+</button>
+                </div>
+                <p class="stock">Stock left: <span id="stock-<%= i+1 %>"><%= cartItems[i].stock %></span></p>
+                <p>Total price: $<span class="item-total-price"><%=cartItems[i].total%></span></p>
+            </div>
+        <% } %>
+    </div>
+    <p>Total Price: $<span id="total-price"><%=totalPrice%></span></p>
+    <a href="/checkout"><button class="checkout">Checkout</button></a>
+    <script src="/js/cart.js"></script>
+</body>
+</html>

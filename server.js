@@ -55,9 +55,9 @@ app.use(session({
     saveUninitialized: true
 }));
 
-// Middleware so that the user variables and cartTotal are always available in the views
+// Middleware so that the user variables and cart are always available in the views
 app.use((req, res, next) => {
-    res.locals.cartTotal = req.session.cartTotal || 0; // Set cartTotal or 0 if not set
+    res.locals.cart = req.session.cart || null; // Set cart or null if not set
     res.locals.user = req.session.user || null; // Set user or null if not logged in
     next(); // Proceed to the next middleware or route handler
 });
@@ -118,8 +118,8 @@ app.post('/login', async (req, res) => {
         // Manually update the last login time in the user object used for the session
         user.lastLogin = new Date();
         req.session.user = user;
-        //add cartTotal to the session
-        req.session.cartTotal = 0;
+        //add cart quantity to the cart session
+        req.session.cart = { quantity: 0 };
         res.redirect(redirectValue);
     }
     catch(err) {
@@ -128,7 +128,7 @@ app.post('/login', async (req, res) => {
     }
 });
 
-app.get('/logout', async (req, res) => {
+app.get('/logout', isAuthenticated, async (req, res) => {
     //update the isOnline status
     const updateQuery = 'UPDATE users SET isOnline = 0 WHERE email = ?';
     await db.execute(updateQuery, [req.session.user.email]);
@@ -166,6 +166,32 @@ app.post('/register', async (req, res) => {
     }
 });
 
+app.get('/set-password', isAuthenticated, (req, res) => {
+    res.render('setPassword.ejs');
+});
+
+app.post('/set-password', isAuthenticated, async (req, res) => {
+    const { password } = req.body;
+    if (password.length < 9) {
+        res.render('setPassword.ejs', {error: 'Password must be at least 9 characters long'});
+    }
+    else {
+        const query = 'UPDATE users SET hashedPassword = ? WHERE email = ?';
+        const values = [password, req.session.user.email];
+        try {
+            const [ results ] = await db.execute(query, values);
+            console.log('Password set:', results);
+            const updateQuery = 'UPDATE users SET needsToChangePassword = 0 WHERE email = ?';
+            db.execute(updateQuery, [req.session.user.email]);
+            console.log('needsToChangePassword updated to 0');
+            res.redirect('/products');
+        }
+        catch(err) {
+            console.error('Database error:', err);
+            res.status(500).send('Internal server error');
+        }
+    }
+});
 
 async function registerUser(firstName, lastName, email, password, width, height, os, res) {
 
@@ -211,7 +237,6 @@ function generatePassword() {
     return password;
 }
 
-
 function sendEmail(email, password, firstName, lastName) {
     //send an email to the user with the generated password
     var mailOptions = {
@@ -233,10 +258,6 @@ function sendEmail(email, password, firstName, lastName) {
 app.get('/profile', isAuthenticated, (req, res) => {
     res.render('profile.ejs');
 });
-
-app.get('/checkout', (req, res) => {
-    res.render('checkout.ejs');
-}); 
 
 app.get('/products', async (req, res) => {
     const query = 'SELECT * FROM products';
@@ -291,54 +312,158 @@ app.post('/add-to-cart', isAuthenticated, async (req, res) => {
             await db.execute('INSERT INTO cartItems (cartId, productId, quantity) VALUES (?, ?, ?)', [cartId, productId, quantity]);
         }
 
-        // Reduce stock in products table
-        await db.execute('UPDATE products SET quantity = quantity - ? WHERE id = ?', [quantity, productId]);
-
         // Update cart total in session
-        req.session.cartTotal = req.session.cartTotal + quantity;
+        req.session.cart.quantity = req.session.cart.quantity + quantity;
         
         // Send totalQuantity back to the client
-        res.status(200).json({ totalQuantity: req.session.cartTotal });
+        res.status(200).json({ totalQuantity: req.session.cart.quantity });
     } catch (err) {
         console.error('Error adding to cart:', err);
         res.status(500).json({ error: 'Internal server error.' });
     }
 });
 
+app.get('/cart', isAuthenticated, async (req, res) => {
+    console.log("cart");
+    const userId = req.session.user.id;
+    const [cart] = await db.execute('SELECT * FROM carts WHERE userId = ?', [userId]);
+    if (cart.length === 0) {
+        return res.render('cart.ejs', { cartItems: [] });
+    }
+
+    const cartId = cart[0].id;
+    let [cartItems] = await db.execute('SELECT * FROM cartItems WHERE cartId = ?', [cartId]);
+    console.log(cartItems);
+    // Get product details for each cart item
+    for (let item of cartItems) {
+        let [product] = await db.execute('SELECT * FROM products WHERE id = ?', [item.productId]);
+        item.product = product[0];
+    }
+
+    // Calculate total price
+    let totalPrice = 0;
+    for (let item of cartItems) {
+        
+        // TODO: Discount doesn't work!
+        // item.product.price = getDiscount(item.quantity, item.product.price);
+        totalPrice += item.product.price * item.quantity
+    }
+
+    //get how many items are left in stock
+    for (let item of cartItems) {
+        let [product] = await db.execute('SELECT quantity FROM products WHERE id = ?', [item.productId]);
+        item.product.stock = product[0].quantity;
+    }
+
+    // Recreate the cartItems array with details
+    cartItems = cartItems.map((item) => {
+        return {
+            id: item.product.id,
+            name: item.product.name,
+            quantity: item.quantity,
+            stock: item.product.stock,
+            price: item.product.price,
+            total: item.product.price * item.quantity
+        };
+    });
+
+    console.log('Cart items:', cartItems);
+
+    res.render('cart.ejs', { cartItems, totalPrice });
+});
+
+app.post("/update-cart", isAuthenticated, async (req, res) => {
+    const { itemId, quantity } = req.body;
+
+    try {
+        // Fetch the product details
+        const [product] = await db.execute("SELECT price, quantity FROM products WHERE id = ?", [itemId]);
+
+        if (!product || quantity > product.quantity) {
+            return res.status(400).json({ error: "Invalid quantity" });
+        }
+
+        // Update the cart in the database
+        await db.execute("UPDATE cartItems SET quantity = ? WHERE productId = ?", [quantity, itemId]);
+        console.log(product[0].price, quantity);
+        // Calculate the updated item total
+        const itemTotal = product[0].price * quantity;
+
+        // Calculate the updated cart total price
+        const [cartTotalPrice] = await db.execute(
+            "SELECT SUM(ci.quantity * p.price) AS totalPrice FROM cartItems ci JOIN products p ON ci.productId = p.id"
+        );
+
+        // TODO: update the cart total in the session, not just for this item
+        req.session.cart.quantity = await getQuanities();
+
+        // TODO: Discount doesn't work!
+        // cartTotalPrice[0].totalPrice = getDiscount(quantity, cartTotalPrice[0].totalPrice)
+
+        console.log("Updated cart:", itemTotal, cartTotalPrice);
+
+        res.json({ itemTotal, totalCartPrice: cartTotalPrice[0].totalPrice });
+    } catch (error) {
+        console.error("Error updating cart:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+app.post("/remove-from-cart", isAuthenticated, async (req, res) => {
+    const { itemId } = req.body;
+
+    try {
+        // Remove the item from the cart in the database
+        await db.execute("DELETE FROM cartItems WHERE productId = ?", [itemId]);        
+
+        // Update the cart quantity in the session
+        req.session.cart.quantity = await getQuanities();
+
+        // Recalculate the total cart price
+        const [cartTotal] = await db.execute(
+            "SELECT SUM(ci.quantity * p.price) AS totalCartPrice FROM cartItems ci JOIN products p ON ci.productId = p.id"
+        );
+
+        res.json({ totalCartPrice: cartTotal.totalCartPrice || 0 });
+    } catch (error) {
+        console.error("Error removing item from cart:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+async function getQuanities(){
+    // Get all items in cart and add quantities up:
+    const [cartItems] = await db.execute("SELECT * FROM cartItems");
+    let totalQuantity = 0;
+    for (let item of cartItems) {
+        totalQuantity += item.quantity;
+    }
+
+    return totalQuantity;
+}
+
+function getDiscount(quantity, price) {
+    let discount = 0;
+    //"If a customer buys the same item 8 times, he gets 8% discount on each item. If he buys 16 items he gets 16% discount"
+    if (quantity >= 8) {
+        price = price * (1 - 0.08);
+        discount = 8;
+    }
+
+    if (quantity >= 16) {
+        price = price * (1 - 0.16);
+        discount = 16;
+    }
+
+    return price;
+}
+
+app.get('/checkout', (req, res) => {
+    res.render('checkout.ejs');
+}); 
 
 app.get('/confirmation', (req, res) => {
     res.render('confirmation.ejs');
-});
-
-app.get('/shoppingcart', (req, res) => {
-    res.render('shoppingCart.ejs');
-});
-
-app.get('/set-password', (req, res) => {
-    res.render('setPassword.ejs');
-});
-
-app.post('/set-password', async (req, res) => {
-    const { password } = req.body;
-    if (password.length < 9) {
-        res.render('setPassword.ejs', {error: 'Password must be at least 9 characters long'});
-    }
-    else {
-        const query = 'UPDATE users SET hashedPassword = ? WHERE email = ?';
-        const values = [password, req.session.user.email];
-        try {
-            const [ results ] = await db.execute(query, values);
-            console.log('Password set:', results);
-            const updateQuery = 'UPDATE users SET needsToChangePassword = 0 WHERE email = ?';
-            db.execute(updateQuery, [req.session.user.email]);
-            console.log('needsToChangePassword updated to 0');
-            res.redirect('/products');
-        }
-        catch(err) {
-            console.error('Database error:', err);
-            res.status(500).send('Internal server error');
-        }
-    }
 });
 
 app.get('/online-users', async (req, res) => {
