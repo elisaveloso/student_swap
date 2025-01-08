@@ -18,18 +18,22 @@
                 <button class="remove-item">X</button>
                 <p>Name: <%=cartItems[i].name%></p>
                 <p>Price: $<%=cartItems[i].price%></p>
+                <label for="quantity-selector">Quantity:</label>
                 <div class="quantity-selector">
                     <button class="decrement">-</button>
                     <input type="text" id="quantity-<%=i+1%>" value="<%=cartItems[i].quantity%>">
                     <button class="increment">+</button>
                 </div>
                 <p class="stock">Stock left: <span id="stock-<%= i+1 %>"><%= cartItems[i].stock %></span></p>
-                <p>Total price: $<span class="item-total-price"><%=cartItems[i].total%></span></p>
+                <p>______________________________</p>
+                <p><span class="item-total-price"><%=cartItems[i].total%></span></p>
             </div>
         <% } %>
     </div>
     <p>Total Price: $<span id="total-price"><%=totalPrice%></span></p>
-    <a href="/checkout"><button class="checkout">Checkout</button></a>
+    <form action="/go-to-checkout" method="POST">
+        <button type="submit">Checkout</button>
+    </form>
     <script src="/js/cart.js"></script>
 </body>
 </html>

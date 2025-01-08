@@ -7,5 +7,16 @@
 </head>
 <body>
     <h1>Confirmation</h1>
+    <p>Thank you for your order!</p>
+    <p>Your order ID is: <%= orderId %></p>
+    <p>Your items: </p>
+    <ul>
+        <% for (let i = 0; i < items.length; i++) { %>
+            <li><%= items[i].name %> - $<%= items[i].price %> - Quantity: <%= items[i].quantity %></li>
+        <% } %>
+    </ul>
+    <p>Subtotal: $<%= totalPrice - shippingCost %></p>
+    <p>Shipping cost: $<%= shippingCost %></p>
+    <p>Total price: $<%= totalPrice %></p>
 </body>
 </html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orders</title>
+</head>
+<body>
+    <h1>Orders</h1>
+    <ul>
+        <% for (let i = 0; i < orders.length; i++) { %>
+            <li>
+                <p>Order ID: <%= orders[i].id %></p>
+                <p>Items: </p>
+                <ul>
+                    <% for (let j = 0; j < orders[i].items.length; j++) { %>
+                        <li><%= orders[i].items[j].name %> - $<%= orders[i].items[j].price %> - Quantity: <%= orders[i].items[j].quantity %></li>
+                    <% } %>
+                </ul>
+                <p>Subtotal: $<%= orders[i].totalPrice - orders[i].shippingCost %></p>
+                <p>Shipping cost: $<%= orders[i].shippingCost %></p>
+                <p>Total price: $<%= orders[i].totalPrice %></p>
+            </li>
+        <% } %>
+</body>
+</html>

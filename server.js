@@ -108,6 +108,12 @@ app.post('/login', async (req, res) => {
 
         if (user.needsToChangePassword === 1) {
             console.log('First login');
+            //create a cart for the user
+            const [result] = await db.execute('INSERT INTO carts (userId) VALUES (?)', [user.id]);
+            req.session.cart = { quantity: 0, items: [], totalPrice: 0 };
+            req.session.cart.id = result.insertId;
+            firstLogin = true;
+
             redirectValue = '/set-password'
         }
 
@@ -118,8 +124,15 @@ app.post('/login', async (req, res) => {
         // Manually update the last login time in the user object used for the session
         user.lastLogin = new Date();
         req.session.user = user;
-        //add cart quantity to the cart session
-        req.session.cart = { quantity: 0 };
+        //check if there are items in the cart for that user and assing them to the session
+        const userId = user.id;
+        const [cart] = await db.execute('SELECT * FROM carts WHERE userId = ?', [userId]);
+        req.session.cart = { quantity: 0, items: [], totalPrice: 0 };
+        req.session.cart.quantity = await getQuantities();
+        req.session.cart.totalPrice = await getTotalPrice();
+        req.session.cart.id = cart[0].id;
+        console.log('Cart:', req.session.cart);
+
         res.redirect(redirectValue);
     }
     catch(err) {
@@ -143,7 +156,7 @@ app.get('/register', (req, res) => {
 app.post('/register', async (req, res) => {
     var password = generatePassword(); //generate a password for the user
     const { firstName, lastName, email, screenResolution, os } = req.body;
-    
+
     width = screenResolution.width;
     height = screenResolution.height;
 
@@ -197,7 +210,7 @@ async function registerUser(firstName, lastName, email, password, width, height,
 
     console.log('Registering user:', firstName, lastName, email, password, width, height, os);
 
-    sendEmail(email , password, firstName, lastName);
+    sendConfirmationEmail(email , password, firstName, lastName);
     
     //sha512 the password before storing it in the database
     password = crypto.SHA512(password).toString(crypto.enc.Hex);
@@ -237,7 +250,7 @@ function generatePassword() {
     return password;
 }
 
-function sendEmail(email, password, firstName, lastName) {
+function sendConfirmationEmail(email, password, firstName, lastName) {
     //send an email to the user with the generated password
     var mailOptions = {
         from: 'studentswap@demomailtrap.com',
@@ -363,13 +376,16 @@ app.get('/cart', isAuthenticated, async (req, res) => {
             quantity: item.quantity,
             stock: item.product.stock,
             price: item.product.price,
-            total: item.product.price * item.quantity
+            total: parseFloat((item.product.price * item.quantity).toFixed(2))
         };
     });
 
     console.log('Cart items:', cartItems);
 
-    res.render('cart.ejs', { cartItems, totalPrice });
+    //store cart items in session
+    req.session.cart.items = cartItems;
+
+    res.render('cart.ejs', { cartItems, totalPrice: totalPrice.toFixed(2) });
 });
 
 app.post("/update-cart", isAuthenticated, async (req, res) => {
@@ -385,29 +401,42 @@ app.post("/update-cart", isAuthenticated, async (req, res) => {
 
         // Update the cart in the database
         await db.execute("UPDATE cartItems SET quantity = ? WHERE productId = ?", [quantity, itemId]);
-        console.log(product[0].price, quantity);
+
         // Calculate the updated item total
         const itemTotal = product[0].price * quantity;
 
-        // Calculate the updated cart total price
-        const [cartTotalPrice] = await db.execute(
-            "SELECT SUM(ci.quantity * p.price) AS totalPrice FROM cartItems ci JOIN products p ON ci.productId = p.id"
-        );
+        req.session.cart.totalPrice = await getTotalPrice();
 
-        // TODO: update the cart total in the session, not just for this item
-        req.session.cart.quantity = await getQuanities();
+        // Update the cart total in the session, not just for this item
+        req.session.cart.quantity = await getQuantities();
+
+        req.session.cart.items = req.session.cart.items.map((item) => {
+            if (item.id === itemId) {
+                item.quantity = quantity;
+                item.total = itemTotal;
+            }
+            return item;
+        });
+
 
         // TODO: Discount doesn't work!
         // cartTotalPrice[0].totalPrice = getDiscount(quantity, cartTotalPrice[0].totalPrice)
 
-        console.log("Updated cart:", itemTotal, cartTotalPrice);
-
-        res.json({ itemTotal, totalCartPrice: cartTotalPrice[0].totalPrice });
+        let totalQuantity = await getQuantities()
+        console.log("Updated cart:", itemTotal, req.session.cart.totalPrice, totalQuantity);
+        res.json({ itemTotal, totalCartPrice: req.session.cart.totalPrice, totalQuantity });
     } catch (error) {
         console.error("Error updating cart:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 });
+
+async function getTotalPrice() {
+    const [cartTotalPrice] = await db.execute(
+        "SELECT SUM(ci.quantity * p.price) AS totalCartPrice FROM cartItems ci JOIN products p ON ci.productId = p.id"
+    );
+    return cartTotalPrice[0].totalCartPrice;
+}
 
 app.post("/remove-from-cart", isAuthenticated, async (req, res) => {
     const { itemId } = req.body;
@@ -416,22 +445,22 @@ app.post("/remove-from-cart", isAuthenticated, async (req, res) => {
         // Remove the item from the cart in the database
         await db.execute("DELETE FROM cartItems WHERE productId = ?", [itemId]);        
 
-        // Update the cart quantity in the session
-        req.session.cart.quantity = await getQuanities();
-
         // Recalculate the total cart price
-        const [cartTotal] = await db.execute(
-            "SELECT SUM(ci.quantity * p.price) AS totalCartPrice FROM cartItems ci JOIN products p ON ci.productId = p.id"
-        );
+        req.session.cart.totalPrice = await getTotalPrice();
 
-        res.json({ totalCartPrice: cartTotal.totalCartPrice || 0 });
+        // Update the cart quantity in the session
+        req.session.cart.quantity = await getQuantities();
+
+        console.log("Total price:", req.session.cart.totalPrice);
+        console.log("Total quantity:", req.session.cart.quantity);
+        res.json({ totalCartPrice: req.session.cart.totalPrice || 0, totalQuantity: req.session.cart.quantity });
     } catch (error) {
         console.error("Error removing item from cart:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 });
 
-async function getQuanities(){
+async function getQuantities(){
     // Get all items in cart and add quantities up:
     const [cartItems] = await db.execute("SELECT * FROM cartItems");
     let totalQuantity = 0;
@@ -458,12 +487,139 @@ function getDiscount(quantity, price) {
     return price;
 }
 
-app.get('/checkout', (req, res) => {
-    res.render('checkout.ejs');
-}); 
+app.get('/checkout', isAuthenticated, (req, res) => {
+    if (req.session.cart.items.length === 0) {
+        return res.redirect('/cart');
+    }
+    res.render('checkout.ejs', { cartItems: req.session.cart.items, totalPrice: req.session.cart.totalPrice });
+});
 
-app.get('/confirmation', (req, res) => {
-    res.render('confirmation.ejs');
+app.post('/go-to-checkout', isAuthenticated, async (req, res) => {
+    if (req.session.cart.items.length === 0) {
+        return res.redirect('/cart');
+    }
+    res.redirect('/checkout');
+});
+
+app.post('/order', isAuthenticated, async (req, res) => {
+    const userId = req.session.user.id;
+    const cart = req.session.cart;
+    const cartItems = cart.items;
+    let totalPrice = cart.totalPrice;
+
+    const { shippingMethod } = req.body;
+    console.log('Order:', userId, cart, totalPrice, shippingMethod);
+    const validShippingMethods = {
+        'DPD': 11,
+        'DHL': 30,
+        'DHL Express': 74
+    };
+
+    // Check if the provided shipping method is valid
+    if (!validShippingMethods.hasOwnProperty(shippingMethod)) {
+        return res.status(400).send('Invalid shipping method');
+    }
+
+    // Calculate the total price on the server side
+    const shippingCost = validShippingMethods[shippingMethod]; // Get the shipping cost
+    const subtotal = totalPrice // Subtotal is already calculated in the session, but without shipping cost
+    totalPrice = subtotal + shippingCost;
+
+    req.session.shippingCost = shippingCost;
+
+    try {
+        // Create an order
+        const [order] = await db.execute('INSERT INTO orders (userId, totalAmount, shippingCost) VALUES (?, ?, ?)', [userId, totalPrice, shippingCost]);
+        const orderId = order.insertId;
+
+        // Create order items
+        for (let item of cartItems) {
+            await db.execute('INSERT INTO orderItems (orderId, productId, quantity, priceAtPurchase) VALUES (?, ?, ?, ?)', [orderId, item.id, item.quantity, item.price]);
+        }
+
+        // Clear the cart
+        await db.execute('DELETE FROM cartItems WHERE cartId = ?', [cart.id]);
+
+        // Update the product quantities
+        for (let item of cartItems) {
+            await db.execute('UPDATE products SET quantity = quantity - ? WHERE id = ?', [item.quantity, item.id]);
+        }
+
+        // Send an email confirmation after the payment process, the user will receive an invoice email with the data: Order number + item quantity + item name + item quantity + shipping + total amount
+        var mailOptions = {
+            from: 'studentswap@demomailtrap.com',
+            to: 'studentswap.reutlingen@gmail.com', //Only email that works with the demo mailtrap account, should be the 'email' variable in real scenario
+            subject: 'Order Confirmation',
+            text: `Thank you for your order! \nOrder number: ${orderId} \nItems:\n${cartItems.map(item => `${item.quantity} x ${item.name}`).join('\n')} \nShipping: ${shippingMethod} - ${shippingCost}€ \nTotal amount: ${totalPrice}€`
+        };
+
+        transporter.sendMail(mailOptions, function(error, info){
+            if (error) {
+                console.log(error);
+            } else {
+                console.log('Email sent: ' + info.response);
+            }
+        });
+
+        res.redirect('/confirmation');
+
+    } catch (err) {
+        console.error('Error creating order:', err);
+        res.status(500).send('Internal server error');
+    }
+});
+
+app.get('/confirmation', isAuthenticated, async (req, res) => {
+    
+    //get the most recent order for the user
+    const userId = req.session.user.id;
+    const [order] = await db.execute('SELECT * FROM orders WHERE userId = ? ORDER BY id DESC LIMIT 1', [userId]);
+    const orderId = order[0].id;
+
+    //get the order items
+    const [orderItems] = await db.execute('SELECT * FROM orderItems WHERE orderId = ?', [orderId]);
+    
+    //get the product names 
+    const items = [];
+    for (let item of orderItems) {
+        const [product] = await db.execute('SELECT name FROM products WHERE id = ?', [item.productId]);
+        items.push({ name: product[0].name, quantity: item.quantity, price: item.priceAtPurchase, subtotal: item.quantity * item.priceAtPurchase });
+    }
+
+    //get the total price and shipping cost
+    const [ totalPriceResult ] = await db.execute('SELECT totalAmount FROM orders WHERE id = ?', [orderId]);
+    const [ shippingCostResult ] = await db.execute('SELECT shippingCost FROM orders WHERE id = ?', [orderId]);
+    const totalPrice = totalPriceResult[0].totalAmount;
+    const shippingCost = shippingCostResult[0].shippingCost;
+
+        console.log('Confirmation:', orderId, items, totalPrice, shippingCost);
+
+        res.render('confirmation.ejs', { orderId, items, totalPrice, shippingCost });
+});
+
+app.get('/orders', isAuthenticated, async (req, res) => {
+    const userId = req.session.user.id;
+    const [orders] = await db.execute('SELECT * FROM orders WHERE userId = ?', [userId]);
+
+    //get the orders items
+    for (let order of orders) {
+        const [orderItems] = await db.execute('SELECT * FROM orderItems WHERE orderId = ?', [order.id]);
+        order.items = [];
+        for (let item of orderItems) {
+            const [product] = await db.execute('SELECT name FROM products WHERE id = ?', [item.productId]);
+            order.items.push({ name: product[0].name, quantity: item.quantity, price: item.priceAtPurchase, subtotal: item.quantity * item.priceAtPurchase });
+        }
+    }
+
+    //get the total price and shipping cost
+    for (let order of orders) {
+        const [ totalPrice ] = await db.execute('SELECT totalAmount FROM orders WHERE id = ?', [order.id]);
+        const [ shippingCost ] = await db.execute('SELECT shippingCost FROM orders WHERE id = ?', [order.id]);
+        order.totalPrice = parseFloat(totalPrice[0].totalAmount);
+        order.shippingCost = parseFloat(shippingCost[0].shippingCost);
+    }
+
+    res.render('orders.ejs', { orders, items: orders.items, totalPrice: orders.totalPrice, shippingCost: orders.shippingCost });
 });
 
 app.get('/online-users', async (req, res) => {
@@ -475,7 +631,6 @@ app.get('/online-users', async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
-
 
 app.listen(port, () => {
     console.log(`Server listening at http://localhost:${port}`);

@@ -148,10 +148,11 @@ CREATE TABLE IF NOT EXISTS orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     userId INT NOT NULL,
     totalAmount DECIMAL(10, 2) NOT NULL,
+    shippingCost DECIMAL(10, 2) NOT NULL,
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
 );
- 
+
 -- OrderItems table (links orders to products)
 CREATE TABLE IF NOT EXISTS orderItems (
     id INT AUTO_INCREMENT PRIMARY KEY,

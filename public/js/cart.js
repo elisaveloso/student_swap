@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             if (response.ok) {
-                const { itemTotal, totalCartPrice } = await response.json();
+                const { itemTotal, totalCartPrice, totalQuantity } = await response.json();
                 console.log(itemTotal, totalCartPrice);
                 // Update the item's total price
                 const itemDiv = document.querySelector(`[data-item-id="${itemId}"]`);
@@ -36,6 +36,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 // Update the total cart price
                 document.getElementById("total-price").innerText = totalCartPrice;
+
+                //update the total qunatity
+                const cartQuantity = document.querySelector(".cart-link span");
+                cartQuantity.textContent = totalQuantity; // Update cart quantity in header
             } else {
                 alert("Failed to update cart.");
             }
@@ -53,15 +57,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 },
                 body: JSON.stringify({ itemId }),
             });
-
+    
             if (response.ok) {
+                const { totalCartPrice, totalQuantity } = await response.json();
+                console.log('Total Cart Price:', totalCartPrice);
+                console.log('Total Quantity:', totalQuantity);
+    
                 // Remove the item from the DOM
                 const itemDiv = document.querySelector(`[data-item-id="${itemId}"]`);
                 itemDiv.remove();
-
+    
                 // Update the total cart price
-                const { totalCartPrice } = await response.json();
-                document.getElementById("total-price").innerText = totalCartPrice.toFixed(2);
+                document.getElementById("total-price").innerText = parseFloat(totalCartPrice).toFixed(2);
+    
+                // Update the total quantity
+                const cartQuantity = document.querySelector(".cart-link span");
+                cartQuantity.textContent = totalQuantity; // Update cart quantity in header
             } else {
                 alert("Failed to remove item from cart.");
             }
