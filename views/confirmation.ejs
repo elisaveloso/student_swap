@@ -4,21 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Confirmation</title>
+    <link rel="stylesheet" href="/css/confirmation.css">
 </head>
 <body>
     <%- include('../partials/header.ejs') %>
-    <h1>Confirmation</h1>
-    <p>Thank you for your order!</p>
-    <p>Your order ID is: <%= orderId %></p>
-    <p>Your items: </p>
-    <ul>
-        <% for (let i = 0; i < items.length; i++) { %>
-            <li><%= items[i].name %> - $<%= items[i].price %> - Quantity: <%= items[i].quantity %></li>
-        <% } %>
-    </ul>
-    <p>Subtotal: $<%= totalPrice - shippingCost %></p>
-    <p>Shipping cost: $<%= shippingCost %></p>
-    <p>Total price: $<%= totalPrice %></p>
+    <div class="container">
+        <h1>Confirmation</h1>
+        <p>Thank you for your order!</p>
+        <p>Your order ID is: <%= orderId %></p>
+        <p>Your items: </p>
+        <ul>
+            <% for (let i = 0; i < items.length; i++) { %>
+                <li><%= items[i].name %> - $<%= items[i].price %> - Quantity: <%= items[i].quantity %></li>
+            <% } %>
+        </ul>
+        <p>Subtotal: $<%= totalPrice - shippingCost %></p>
+        <p>Shipping cost: $<%= shippingCost %></p>
+        <p>Total price: $<%= totalPrice %></p>
+    </div>
     <script src="./js/confirmation.js"></script>
 </body>
 </html>

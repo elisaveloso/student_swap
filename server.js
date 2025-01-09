@@ -32,6 +32,7 @@ const db = mysql.createPool({
     user: 'root',
     password: '@RU7.aPA1N4k',
     database: 'studentswap',
+    charset: 'utf8mb4',
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
@@ -45,6 +46,31 @@ const db = mysql.createPool({
         console.log('Database connection successful!');
     } catch (err) {
         console.error('Error connecting to the database:', err.message);
+    }
+})();
+
+
+//insert a product into the database
+//test if the product already exists
+(async () => {
+    try {
+        const [results] = await db.execute('SELECT * FROM products WHERE name = ?', ['Küchenmaschine Deluxe']);
+        if (!results.length > 0) {
+            (async () => {
+                try {
+                    const [results] = await db.execute(
+                        'INSERT INTO products (name, description, price, quantity, imageURL) VALUES (?, ?, ?, ?, ?)',
+                        ['Küchenmaschine Deluxe', 'A multifunctional food processor for your cooking needs', 499.99, 10, 'https://www.bader.de/celum/celum_assets/2023HE9_0084010FS070_13593242_jpg_local_l_rd_local_l_rd.jpg/profi-kuechenmaschine-mit-planetenruehrwerk-farbe-rot.jpg']
+                    );
+                    console.log('Product inserted:', results);
+                } catch (err) {
+                    console.error('Error inserting product:', err);
+                }
+            })();
+            return;
+        }
+    } catch (err) {
+        console.error('Error checking for product:', err);
     }
 })();
 
@@ -132,7 +158,6 @@ app.post('/login', async (req, res) => {
         req.session.cart.quantity = await getQuantities();
         req.session.cart.id = cart[0].id;
         req.session.cart.totalPrice = await getTotalPrice(req.session.cart.id);
-        console.log('Cart:', req.session.cart);
 
         res.redirect(redirectValue);
     }
@@ -215,7 +240,6 @@ async function registerUser(firstName, lastName, email, password, width, height,
     
     //sha512 the password before storing it in the database
     password = crypto.SHA512(password).toString(crypto.enc.Hex);
-    console.log('Hashed password:', password)
 
     const query = 'INSERT INTO users (firstName, lastName, email, hashedPassword, width, height, operatingSystem) VALUES (?, ?, ?, ?, ?, ?, ?)';
     const values = [firstName, lastName, email, password, width, height, os];
@@ -398,13 +422,11 @@ app.post("/update-cart", isAuthenticated, async (req, res) => {
         const itemPrice = product[0].price * discount;
         const itemTotal = parseFloat(itemPrice * quantity).toFixed(2);
         const discountPercentage = Math.round((1 - discount) * 100); // Calculate discount percentage
-        console.log("Item total:", itemTotal);
 
         await db.execute("UPDATE cartItems SET quantity = ? WHERE productId = ?", [quantity, itemId]);
 
         const cartId = req.session.cart.id;
         req.session.cart.totalPrice = await getTotalPrice(cartId);
-        console.log("Total price:", req.session.cart.totalPrice);
         req.session.cart.quantity = await getQuantities();
 
         req.session.cart.items = req.session.cart.items.map((item) => {
@@ -434,7 +456,6 @@ async function getTotalPrice(cartId) {
         const [cartItems] = await db.execute(
             "SELECT * FROM cartItems WHERE cartId = ?", [cartId]
         );
-        console.log("Cart items:", cartItems);
         let totalCartPrice = 0;
         for (let item of cartItems) {
             // Get the price and quantity of the product
@@ -445,10 +466,8 @@ async function getTotalPrice(cartId) {
             const discount = await getDiscount(item.quantity);
             const discountedPrice = item.price * discount;
 
-            console.log(`Item quantity: ${item.quantity}, Original price: ${item.price}, Discounted price: ${discountedPrice}`);
             totalCartPrice += item.quantity * discountedPrice;
         }
-        console.log("Total price:", totalCartPrice);
         return totalCartPrice.toFixed(2);
     } catch (error) {
         console.error("Error calculating total price:", error);
@@ -469,8 +488,6 @@ app.post("/remove-from-cart", isAuthenticated, async (req, res) => {
         // Update the cart quantity in the session
         req.session.cart.quantity = await getQuantities();
 
-        console.log("Total price:", req.session.cart.totalPrice);
-        console.log("Total quantity:", req.session.cart.quantity);
         res.json({ totalCartPrice: req.session.cart.totalPrice || 0, totalQuantity: req.session.cart.quantity });
     } catch (error) {
         console.error("Error removing item from cart:", error);
@@ -491,9 +508,7 @@ async function getQuantities(){
 
 async function getDiscount(quantity) {
     let discount = 1;
-    console.log("Quantity disc1", quantity);
     parseInt(quantity);
-    console.log("Quantity disc2:", quantity);
     if (quantity >= 8 && quantity < 16) {
         discount = 0.92; // 8% discount
     } else if (quantity >= 16) {
@@ -526,7 +541,6 @@ app.post('/order', isAuthenticated, async (req, res) => {
     let totalPrice = cart.totalPrice;
 
     const { shippingMethod } = req.body;
-    console.log('Order:', userId, cart, totalPrice, shippingMethod);
     const validShippingMethods = {
         'DPD': 11,
         'DHL': 30,
@@ -680,8 +694,6 @@ app.get('/confirmation', isAuthenticated, async (req, res) => {
     const [ shippingCostResult ] = await db.execute('SELECT shippingCost FROM orders WHERE id = ?', [orderId]);
     const totalPrice = totalPriceResult[0].totalAmount;
     const shippingCost = shippingCostResult[0].shippingCost;
-
-        console.log('Confirmation:', orderId, items, totalPrice, shippingCost);
 
         res.render('confirmation.ejs', { orderId, items, totalPrice, shippingCost });
 });

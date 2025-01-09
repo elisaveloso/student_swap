@@ -1,5 +1,6 @@
 -- Create the database and select it
 CREATE DATABASE IF NOT EXISTS studentswap;
+ALTER DATABASE studentswap CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE studentswap;
 
 -- Users table
@@ -20,7 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- Products table
 CREATE TABLE IF NOT EXISTS products (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(128) NOT NULL,
+    name VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
     description TEXT,
     price DECIMAL(10, 2) NOT NULL,
     quantity INT NOT NULL CHECK (quantity >= 0), -- Ensure non-negative quantity
@@ -87,12 +88,6 @@ INSERT INTO products(
     179.99,
     12,
     'https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/apple-tv-4k-hero-select-202210_FMT_WHH?wid=640&hei=600&fmt=jpeg&qlt=90&.v=1664896361164'
-),(
-    'Küchenmaschine Deluxe',
-    'A multifunctional food processor for your cooking needs',
-    499.99,
-    10,
-    'https://example.com/images/kuechenmaschine.jpg'
 ), (
     'Magic Keyboard',
     'A wireless keyboard for your Mac',

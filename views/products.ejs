@@ -16,7 +16,7 @@
     <% for (let i = 0; i < products.length; i++) { %>
         <div class="product">
             <h3><%= products[i].name %></h3>
-            <img src="<%= products[i].imageURL %>" alt="image <%= i+1 %>" style="width: 100%; height: auto;">
+            <img src="<%= products[i].imageURL %>" alt="image <%= i+1 %>" style="width: auto; height: 150px;">
             <p class="description"><%= products[i].description %></p>
             <p class="price">Price: €<%= products[i].price %></p>
             <p>Stock: <span id="stock-<%= i+1 %>"><%= products[i].quantity %></span></p>
