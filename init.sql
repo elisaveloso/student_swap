@@ -92,7 +92,7 @@ INSERT INTO products(
     'A multifunctional food processor for your cooking needs',
     499.99,
     10,
-    'https://example.com/images/kuechenmaschine.jpg'
+    'https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcSWMNVRem5AOPm_QlTFeOA0e89rY95Av94yo2Rcr3I2B0OTnuH_FWP-AkLlr7zqNyTWDNtG_O3yHJuzN6keLtAMaqEE3zKlKMWcnLz_g8lUt9hS0t0kUah5uRf9c7sQNqLqktKkLtGo&usqp=CAc'
 ), (
     'Magic Keyboard',
     'A wireless keyboard for your Mac',
