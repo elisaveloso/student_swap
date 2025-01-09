@@ -412,11 +412,12 @@ app.post("/update-cart", isAuthenticated, async (req, res) => {
                 item.quantity = quantity;
                 item.total = itemTotal;
                 item.discountPercentage = discountPercentage; // Update discount percentage
+                item.price = itemPrice; // Update item price
             }
             return item;
         });
 
-        res.json({ itemTotal, totalCartPrice: req.session.cart.totalPrice, totalQuantity: req.session.cart.quantity, discountPercentage });
+        res.json({ itemTotal, itemPrice, totalCartPrice: req.session.cart.totalPrice, totalQuantity: req.session.cart.quantity, discountPercentage });
     } catch (error) {
         console.error("Error updating cart:", error);
         res.status(500).json({ error: "Internal server error" });
@@ -431,16 +432,21 @@ app.post("/update-cart-quantity", isAuthenticated, async (req, res) => {
 async function getTotalPrice(cartId) {
     try {
         const [cartItems] = await db.execute(
-            "SELECT * FROM cartItems where cartId = ?", [cartId]
+            "SELECT * FROM cartItems WHERE cartId = ?", [cartId]
         );
         console.log("Cart items:", cartItems);
         let totalCartPrice = 0;
         for (let item of cartItems) {
-            //get the price of the productId
+            // Get the price and quantity of the product
             const [product] = await db.execute("SELECT price FROM products WHERE id = ?", [item.productId]);
             item.price = product[0].price;
-            console.log(item.quantity);
-            totalCartPrice += item.quantity * item.price;
+
+            // Apply the discount
+            const discount = await getDiscount(item.quantity);
+            const discountedPrice = item.price * discount;
+
+            console.log(`Item quantity: ${item.quantity}, Original price: ${item.price}, Discounted price: ${discountedPrice}`);
+            totalCartPrice += item.quantity * discountedPrice;
         }
         console.log("Total price:", totalCartPrice);
         return totalCartPrice.toFixed(2);

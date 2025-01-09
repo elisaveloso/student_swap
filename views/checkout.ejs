@@ -15,8 +15,7 @@
             <p>Name: <%=cartItems[i].name%></p>
             <p>Price: $<%=cartItems[i].price%></p>
             <p>Quantity: <%=cartItems[i].quantity%></p>
-            <p>______________________________</p>
-            $<span class="item-total-price"><%=cartItems[i].total%></span></p>
+            |<span class="item-total-price">$<%=cartItems[i].total%></span></p>
         </div>
     <% } %>
     <p>Subtotal: <span class="subtotal"><%=totalPrice%></span></p>

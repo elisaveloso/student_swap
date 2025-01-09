@@ -29,11 +29,14 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             if (response.ok) {
-                const { itemTotal, totalCartPrice, totalQuantity, discountPercentage } = await response.json();
-                console.log(itemTotal, totalCartPrice, discountPercentage);
+                const { itemTotal, itemPrice, totalCartPrice, totalQuantity, discountPercentage } = await response.json();
+                console.log(itemTotal, itemPrice, totalCartPrice, discountPercentage);
                 // Update the item's total price
                 const itemDiv = document.querySelector(`[data-item-id="${itemId}"]`);
                 itemDiv.querySelector(".item-total-price").innerText = itemTotal;
+
+                // Update the item's price
+                itemDiv.querySelector(".item-price").innerText = `Price: $${itemPrice.toFixed(2)}`;
 
                 // Update the total cart price
                 document.getElementById("total-price").innerText = totalCartPrice;

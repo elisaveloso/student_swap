@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <link rel="stylesheet" href="./css/cart.css">
     <link rel="stylesheet" href="./css/products.css">
+    <link rel="stylesheet" href="./css/cart.css">
 </head>
 <body>
     <%- include('../partials/header.ejs') %>
@@ -28,14 +28,13 @@
                 <% if (cartItems[i].discountPercentage > 0) { %>
                     <p class="discount">Discount: <%= cartItems[i].discountPercentage %> %</p>
                 <% } %>
-                <p>______________________________</p>
                 <p><span class="item-total-price"><%=cartItems[i].total%></span></p>
             </div>
         <% } %>
     </div>
     <p>Total Price: $<span id="total-price"><%=totalPrice%></span></p>
     <form action="/go-to-checkout" method="POST">
-        <button type="submit">Checkout</button>
+        <button class="checkout" type="submit">Check out</button>
     </form>
     <script src="/js/cart.js"></script>
 </body>
