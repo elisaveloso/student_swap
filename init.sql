@@ -99,30 +99,6 @@ INSERT INTO products(
     79.99,
     15,
     'https://via.placeholder.com/150'
-), (
-    'Apple Pencil',
-    'A stylus for your iPad',
-    99.99,
-    10,
-    'https://via.placeholder.com/150'
-), (
-    'Apple Leather Case',
-    'A protective case for your iPhone',
-    49.99,
-    30,
-    'https://via.placeholder.com/150'
-), (
-    'Apple Smart Folio',
-    'A protective case for your iPad',
-    79.99,
-    20,
-    'https://via.placeholder.com/150'
-), (
-    'Apple Watch Band',
-    'A stylish band for your Apple Watch',
-    49.99,
-    25,
-    'https://via.placeholder.com/150'
 );
 
 -- Carts table (links to users)

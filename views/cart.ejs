@@ -17,7 +17,7 @@
             <div class="item" data-item-id="<%=cartItems[i].id%>">
                 <button class="remove-item">X</button>
                 <p>Name: <%=cartItems[i].name%></p>
-                <p>Price: $<%=cartItems[i].price%></p>
+                <p class="item-price">Price: $<%=cartItems[i].price%></p>
                 <label for="quantity-selector">Quantity:</label>
                 <div class="quantity-selector">
                     <button class="decrement">-</button>
@@ -25,6 +25,9 @@
                     <button class="increment">+</button>
                 </div>
                 <p class="stock">Stock left: <span id="stock-<%= i+1 %>"><%= cartItems[i].stock %></span></p>
+                <% if (cartItems[i].discountPercentage > 0) { %>
+                    <p class="discount">Discount: <%= cartItems[i].discountPercentage %> %</p>
+                <% } %>
                 <p>______________________________</p>
                 <p><span class="item-total-price"><%=cartItems[i].total%></span></p>
             </div>

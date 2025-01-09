@@ -21,6 +21,7 @@
                 <p>Subtotal: $<%= orders[i].totalPrice - orders[i].shippingCost %></p>
                 <p>Shipping cost: $<%= orders[i].shippingCost %></p>
                 <p>Total price: $<%= orders[i].totalPrice %></p>
+                <p><a href="/order/<%=orders[i].id%>">Same order again</a></p>
             </li>
         <% } %>
 </body>

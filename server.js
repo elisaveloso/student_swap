@@ -90,6 +90,7 @@ app.get('/login', (req, res) => {
 
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
+    console.log('Login:', email, password);
     let redirectValue = '/';
     const query = 'SELECT * FROM users WHERE email = ? AND hashedPassword = ?';
     const values = [email, password];
@@ -129,8 +130,8 @@ app.post('/login', async (req, res) => {
         const [cart] = await db.execute('SELECT * FROM carts WHERE userId = ?', [userId]);
         req.session.cart = { quantity: 0, items: [], totalPrice: 0 };
         req.session.cart.quantity = await getQuantities();
-        req.session.cart.totalPrice = await getTotalPrice();
         req.session.cart.id = cart[0].id;
+        req.session.cart.totalPrice = await getTotalPrice(req.session.cart.id);
         console.log('Cart:', req.session.cart);
 
         res.redirect(redirectValue);
@@ -210,7 +211,7 @@ async function registerUser(firstName, lastName, email, password, width, height,
 
     console.log('Registering user:', firstName, lastName, email, password, width, height, os);
 
-    sendConfirmationEmail(email , password, firstName, lastName);
+    sendRegistrationEmail(email , password, firstName, lastName);
     
     //sha512 the password before storing it in the database
     password = crypto.SHA512(password).toString(crypto.enc.Hex);
@@ -250,7 +251,7 @@ function generatePassword() {
     return password;
 }
 
-function sendConfirmationEmail(email, password, firstName, lastName) {
+function sendRegistrationEmail(email, password, firstName, lastName) {
     //send an email to the user with the generated password
     var mailOptions = {
         from: 'studentswap@demomailtrap.com',
@@ -325,7 +326,7 @@ app.post('/add-to-cart', isAuthenticated, async (req, res) => {
             await db.execute('INSERT INTO cartItems (cartId, productId, quantity) VALUES (?, ?, ?)', [cartId, productId, quantity]);
         }
 
-        // Update cart total in session
+        // Update cart quantity in session
         req.session.cart.quantity = req.session.cart.quantity + quantity;
         
         // Send totalQuantity back to the client
@@ -337,38 +338,33 @@ app.post('/add-to-cart', isAuthenticated, async (req, res) => {
 });
 
 app.get('/cart', isAuthenticated, async (req, res) => {
-    console.log("cart");
     const userId = req.session.user.id;
     const [cart] = await db.execute('SELECT * FROM carts WHERE userId = ?', [userId]);
     if (cart.length === 0) {
-        return res.render('cart.ejs', { cartItems: [] });
+        return res.render('cart.ejs', { cartItems: [], totalPrice: 0 });
     }
 
     const cartId = cart[0].id;
     let [cartItems] = await db.execute('SELECT * FROM cartItems WHERE cartId = ?', [cartId]);
-    console.log(cartItems);
-    // Get product details for each cart item
+
     for (let item of cartItems) {
         let [product] = await db.execute('SELECT * FROM products WHERE id = ?', [item.productId]);
         item.product = product[0];
+        item.discount = await getDiscount(item.quantity);
+        item.discountPercentage = Math.round((1 - item.discount) * 100); // Calculate discount percentage
+        item.product.price = item.product.price * item.discount;
     }
 
-    // Calculate total price
     let totalPrice = 0;
     for (let item of cartItems) {
-        
-        // TODO: Discount doesn't work!
-        // item.product.price = getDiscount(item.quantity, item.product.price);
-        totalPrice += item.product.price * item.quantity
+        totalPrice += item.product.price * item.quantity;
     }
 
-    //get how many items are left in stock
     for (let item of cartItems) {
         let [product] = await db.execute('SELECT quantity FROM products WHERE id = ?', [item.productId]);
         item.product.stock = product[0].quantity;
     }
 
-    // Recreate the cartItems array with details
     cartItems = cartItems.map((item) => {
         return {
             id: item.product.id,
@@ -376,14 +372,14 @@ app.get('/cart', isAuthenticated, async (req, res) => {
             quantity: item.quantity,
             stock: item.product.stock,
             price: item.product.price,
-            total: parseFloat((item.product.price * item.quantity).toFixed(2))
+            total: (item.product.price * item.quantity).toFixed(2),
+            discountPercentage: item.discountPercentage // Include discount percentage
         };
     });
 
-    console.log('Cart items:', cartItems);
-
-    //store cart items in session
     req.session.cart.items = cartItems;
+    req.session.cart.totalPrice = totalPrice.toFixed(2);
+    req.session.cart.quantity = await getQuantities();
 
     res.render('cart.ejs', { cartItems, totalPrice: totalPrice.toFixed(2) });
 });
@@ -392,50 +388,66 @@ app.post("/update-cart", isAuthenticated, async (req, res) => {
     const { itemId, quantity } = req.body;
 
     try {
-        // Fetch the product details
         const [product] = await db.execute("SELECT price, quantity FROM products WHERE id = ?", [itemId]);
 
-        if (!product || quantity > product.quantity) {
+        if (!product || quantity > product[0].quantity) {
             return res.status(400).json({ error: "Invalid quantity" });
         }
 
-        // Update the cart in the database
+        const discount = await getDiscount(quantity);
+        const itemPrice = product[0].price * discount;
+        const itemTotal = parseFloat(itemPrice * quantity).toFixed(2);
+        const discountPercentage = Math.round((1 - discount) * 100); // Calculate discount percentage
+        console.log("Item total:", itemTotal);
+
         await db.execute("UPDATE cartItems SET quantity = ? WHERE productId = ?", [quantity, itemId]);
 
-        // Calculate the updated item total
-        const itemTotal = product[0].price * quantity;
-
-        req.session.cart.totalPrice = await getTotalPrice();
-
-        // Update the cart total in the session, not just for this item
+        const cartId = req.session.cart.id;
+        req.session.cart.totalPrice = await getTotalPrice(cartId);
+        console.log("Total price:", req.session.cart.totalPrice);
         req.session.cart.quantity = await getQuantities();
 
         req.session.cart.items = req.session.cart.items.map((item) => {
             if (item.id === itemId) {
                 item.quantity = quantity;
                 item.total = itemTotal;
+                item.discountPercentage = discountPercentage; // Update discount percentage
             }
             return item;
         });
 
-
-        // TODO: Discount doesn't work!
-        // cartTotalPrice[0].totalPrice = getDiscount(quantity, cartTotalPrice[0].totalPrice)
-
-        let totalQuantity = await getQuantities()
-        console.log("Updated cart:", itemTotal, req.session.cart.totalPrice, totalQuantity);
-        res.json({ itemTotal, totalCartPrice: req.session.cart.totalPrice, totalQuantity });
+        res.json({ itemTotal, totalCartPrice: req.session.cart.totalPrice, totalQuantity: req.session.cart.quantity, discountPercentage });
     } catch (error) {
         console.error("Error updating cart:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 });
 
-async function getTotalPrice() {
-    const [cartTotalPrice] = await db.execute(
-        "SELECT SUM(ci.quantity * p.price) AS totalCartPrice FROM cartItems ci JOIN products p ON ci.productId = p.id"
-    );
-    return cartTotalPrice[0].totalCartPrice;
+app.post("/update-cart-quantity", isAuthenticated, async (req, res) => {
+    totalQuantity = await getQuantities();
+    res.json({ totalQuantity });
+});
+
+async function getTotalPrice(cartId) {
+    try {
+        const [cartItems] = await db.execute(
+            "SELECT * FROM cartItems where cartId = ?", [cartId]
+        );
+        console.log("Cart items:", cartItems);
+        let totalCartPrice = 0;
+        for (let item of cartItems) {
+            //get the price of the productId
+            const [product] = await db.execute("SELECT price FROM products WHERE id = ?", [item.productId]);
+            item.price = product[0].price;
+            console.log(item.quantity);
+            totalCartPrice += item.quantity * item.price;
+        }
+        console.log("Total price:", totalCartPrice);
+        return totalCartPrice.toFixed(2);
+    } catch (error) {
+        console.error("Error calculating total price:", error);
+        throw error;
+    }
 }
 
 app.post("/remove-from-cart", isAuthenticated, async (req, res) => {
@@ -446,7 +458,7 @@ app.post("/remove-from-cart", isAuthenticated, async (req, res) => {
         await db.execute("DELETE FROM cartItems WHERE productId = ?", [itemId]);        
 
         // Recalculate the total cart price
-        req.session.cart.totalPrice = await getTotalPrice();
+        req.session.cart.totalPrice = await getTotalPrice(req.session.cart.id);
 
         // Update the cart quantity in the session
         req.session.cart.quantity = await getQuantities();
@@ -471,27 +483,27 @@ async function getQuantities(){
     return totalQuantity;
 }
 
-function getDiscount(quantity, price) {
-    let discount = 0;
-    //"If a customer buys the same item 8 times, he gets 8% discount on each item. If he buys 16 items he gets 16% discount"
-    if (quantity >= 8) {
-        price = price * (1 - 0.08);
-        discount = 8;
+async function getDiscount(quantity) {
+    let discount = 1;
+    console.log("Quantity disc1", quantity);
+    parseInt(quantity);
+    console.log("Quantity disc2:", quantity);
+    if (quantity >= 8 && quantity < 16) {
+        discount = 0.92; // 8% discount
+    } else if (quantity >= 16) {
+        discount = 0.84; // 16% discount
     }
-
-    if (quantity >= 16) {
-        price = price * (1 - 0.16);
-        discount = 16;
-    }
-
-    return price;
+    return discount;
 }
-
 app.get('/checkout', isAuthenticated, (req, res) => {
     if (req.session.cart.items.length === 0) {
         return res.redirect('/cart');
     }
-    res.render('checkout.ejs', { cartItems: req.session.cart.items, totalPrice: req.session.cart.totalPrice });
+
+    const cartItems = req.session.cart.items;
+    const totalPrice = req.session.cart.totalPrice;
+    res.render('checkout.ejs', { cartItems, totalPrice });
+
 });
 
 app.post('/go-to-checkout', isAuthenticated, async (req, res) => {
@@ -545,12 +557,83 @@ app.post('/order', isAuthenticated, async (req, res) => {
             await db.execute('UPDATE products SET quantity = quantity - ? WHERE id = ?', [item.quantity, item.id]);
         }
 
+        await sendOrderConfirmation(req.session.user.email, orderId, cartItems, totalPrice, shippingCost);
+
+        res.redirect('/confirmation');
+
+    } catch (err) {
+        console.error('Error creating order:', err);
+        res.status(500).send('Internal server error');
+    }
+});
+
+app.get('/orders', isAuthenticated, async (req, res) => {
+    const userId = req.session.user.id;
+    const [orders] = await db.execute('SELECT * FROM orders WHERE userId = ?', [userId]);
+
+    //get the orders items
+    for (let order of orders) {
+        const [orderItems] = await db.execute('SELECT * FROM orderItems WHERE orderId = ?', [order.id]);
+        order.items = [];
+        for (let item of orderItems) {
+            const [product] = await db.execute('SELECT name FROM products WHERE id = ?', [item.productId]);
+            order.items.push({ name: product[0].name, quantity: item.quantity, price: item.priceAtPurchase, subtotal: item.quantity * item.priceAtPurchase });
+        }
+    }
+
+    //get the total price and shipping cost
+    for (let order of orders) {
+        const [ totalPrice ] = await db.execute('SELECT totalAmount FROM orders WHERE id = ?', [order.id]);
+        const [ shippingCost ] = await db.execute('SELECT shippingCost FROM orders WHERE id = ?', [order.id]);
+        order.totalPrice = parseFloat(totalPrice[0].totalAmount);
+        order.shippingCost = parseFloat(shippingCost[0].shippingCost);
+    }
+
+    res.render('orders.ejs', { orders, items: orders.items, totalPrice: orders.totalPrice, shippingCost: orders.shippingCost });
+});
+
+app.get('/order/:id', isAuthenticated, async (req, res) => {
+    const orderId = req.params.id;
+    const userId = req.session.user.id;
+
+    console.log('Order:', orderId, 'User:', userId);
+
+    const [order] = await db.execute('SELECT * FROM orders WHERE id = ? AND userId = ?', [orderId, userId]);
+
+    if (order.length === 0) {
+        return res.status(404).send('Order not found');
+    }
+
+    const [orderItems] = await db.execute('SELECT * FROM orderItems WHERE orderId = ?', [orderId]);
+    const items = [];
+    for (let item of orderItems) {
+        const [product] = await db.execute('SELECT name FROM products WHERE id = ?', [item.productId]);
+        items.push({ name: product[0].name, quantity: item.quantity, price: item.priceAtPurchase, subtotal: item.quantity * item.priceAtPurchase });
+    }
+
+    const [ totalPriceResult ] = await db.execute('SELECT totalAmount FROM orders WHERE id = ?', [orderId]);
+    const [ shippingCostResult ] = await db.execute('SELECT shippingCost FROM orders WHERE id = ?', [orderId]);
+    const totalPrice = totalPriceResult[0].totalAmount;
+    const shippingCost = shippingCostResult[0].shippingCost;
+
+    await sendOrderConfirmation(req.session.user.email, orderId, items, totalPrice, shippingCost);
+
+    //delete quantity from stock
+    for (let item of orderItems) {
+        await db.execute('UPDATE products SET quantity = quantity - ? WHERE id = ?', [item.quantity, item.productId]);
+    }
+
+    res.redirect('/confirmation')
+});
+
+async function sendOrderConfirmation(email, orderId, cartItems, totalPrice, shippingCost) {
+    
         // Send an email confirmation after the payment process, the user will receive an invoice email with the data: Order number + item quantity + item name + item quantity + shipping + total amount
         var mailOptions = {
             from: 'studentswap@demomailtrap.com',
             to: 'studentswap.reutlingen@gmail.com', //Only email that works with the demo mailtrap account, should be the 'email' variable in real scenario
             subject: 'Order Confirmation',
-            text: `Thank you for your order! \nOrder number: ${orderId} \nItems:\n${cartItems.map(item => `${item.quantity} x ${item.name}`).join('\n')} \nShipping: ${shippingMethod} - ${shippingCost}€ \nTotal amount: ${totalPrice}€`
+            text: `Thank you for your order! \nOrder number: ${orderId} \nItems:\n${cartItems.map(item => `${item.quantity} x ${item.name}`).join('\n ')} \nShipping cost ${shippingCost}€ \nTotal amount: ${totalPrice}€`
         };
 
         transporter.sendMail(mailOptions, function(error, info){
@@ -560,14 +643,7 @@ app.post('/order', isAuthenticated, async (req, res) => {
                 console.log('Email sent: ' + info.response);
             }
         });
-
-        res.redirect('/confirmation');
-
-    } catch (err) {
-        console.error('Error creating order:', err);
-        res.status(500).send('Internal server error');
-    }
-});
+}
 
 app.get('/confirmation', isAuthenticated, async (req, res) => {
     
@@ -595,31 +671,6 @@ app.get('/confirmation', isAuthenticated, async (req, res) => {
         console.log('Confirmation:', orderId, items, totalPrice, shippingCost);
 
         res.render('confirmation.ejs', { orderId, items, totalPrice, shippingCost });
-});
-
-app.get('/orders', isAuthenticated, async (req, res) => {
-    const userId = req.session.user.id;
-    const [orders] = await db.execute('SELECT * FROM orders WHERE userId = ?', [userId]);
-
-    //get the orders items
-    for (let order of orders) {
-        const [orderItems] = await db.execute('SELECT * FROM orderItems WHERE orderId = ?', [order.id]);
-        order.items = [];
-        for (let item of orderItems) {
-            const [product] = await db.execute('SELECT name FROM products WHERE id = ?', [item.productId]);
-            order.items.push({ name: product[0].name, quantity: item.quantity, price: item.priceAtPurchase, subtotal: item.quantity * item.priceAtPurchase });
-        }
-    }
-
-    //get the total price and shipping cost
-    for (let order of orders) {
-        const [ totalPrice ] = await db.execute('SELECT totalAmount FROM orders WHERE id = ?', [order.id]);
-        const [ shippingCost ] = await db.execute('SELECT shippingCost FROM orders WHERE id = ?', [order.id]);
-        order.totalPrice = parseFloat(totalPrice[0].totalAmount);
-        order.shippingCost = parseFloat(shippingCost[0].shippingCost);
-    }
-
-    res.render('orders.ejs', { orders, items: orders.items, totalPrice: orders.totalPrice, shippingCost: orders.shippingCost });
 });
 
 app.get('/online-users', async (req, res) => {

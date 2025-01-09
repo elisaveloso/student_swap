@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const updateQuantity = (input, change) => {
         const itemDiv = input.closest(".item");
         const itemId = itemDiv.dataset.itemId;
+        const itemPrice = parseFloat(itemDiv.querySelector(".item-price").innerText);
 
         let quantity = parseInt(input.value);
         const stock = parseInt(itemDiv.querySelector(".stock span").innerText);
@@ -13,33 +14,48 @@ document.addEventListener("DOMContentLoaded", () => {
         if (quantity === 0) {
             removeItem(itemId);
         } else {
-            updateItem(itemId, quantity);
+            updateItem(itemId, quantity, itemPrice);
         }
     };
 
-    const updateItem = async (itemId, quantity) => {
+    const updateItem = async (itemId, quantity, itemPrice) => {
         try {
             const response = await fetch("/update-cart", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ itemId, quantity }),
+                body: JSON.stringify({ itemId, quantity, itemPrice }),
             });
 
             if (response.ok) {
-                const { itemTotal, totalCartPrice, totalQuantity } = await response.json();
-                console.log(itemTotal, totalCartPrice);
+                const { itemTotal, totalCartPrice, totalQuantity, discountPercentage } = await response.json();
+                console.log(itemTotal, totalCartPrice, discountPercentage);
                 // Update the item's total price
                 const itemDiv = document.querySelector(`[data-item-id="${itemId}"]`);
-                itemDiv.querySelector(".item-total-price").innerText = itemTotal.toFixed(2);
+                itemDiv.querySelector(".item-total-price").innerText = itemTotal;
 
                 // Update the total cart price
                 document.getElementById("total-price").innerText = totalCartPrice;
 
-                //update the total qunatity
+                // Update the total quantity
                 const cartQuantity = document.querySelector(".cart-link span");
                 cartQuantity.textContent = totalQuantity; // Update cart quantity in header
+
+                // Update the discount percentage
+                const discountElement = itemDiv.querySelector(".discount");
+                if (discountPercentage > 0) {
+                    if (discountElement) {
+                        discountElement.innerText = `Discount: ${discountPercentage}%`;
+                    } else {
+                        const discountP = document.createElement("p");
+                        discountP.classList.add("discount");
+                        discountP.innerText = `Discount: ${discountPercentage}%`;
+                        itemDiv.appendChild(discountP);
+                    }
+                } else if (discountElement) {
+                    discountElement.remove();
+                }
             } else {
                 alert("Failed to update cart.");
             }
@@ -121,10 +137,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Add event listeners for the remove buttons
     document.querySelectorAll(".remove-item").forEach((button) => {
-            button.addEventListener("click", (e) => {
+        button.addEventListener("click", (e) => {
             const itemId = e.target.closest(".item").dataset.itemId;
             removeItem(itemId);
         });
     });
-    
 });
