@@ -12,10 +12,12 @@
     
     <main class="container">
         <!-- Welcome Message -->
-        <div class="text-center mt-5">
-            <h1>Welcome, <%=user.firstName%> <%= user.lastName %>!</h1>
-            <p>You were last online on <strong><%= user.lastOnline %></strong>.</p>
-        </div>
+        <% if (user)  {%>
+            <div class="text-center mt-5">
+                <h1>Welcome, <%=user.firstName%> <%= user.lastName %>!</h1>
+                <p>You were last online on <strong><%= user.lastOnline %></strong>.</p>
+            </div>
+        <% } %>
 
         <div class="text-center mt-5">
             <h1>Student Swap</h1>
