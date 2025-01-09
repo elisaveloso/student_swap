@@ -1,5 +1,7 @@
 -- Create the database and select it
 CREATE DATABASE IF NOT EXISTS studentswap;
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
 USE studentswap;
 
 -- Users table
@@ -20,7 +22,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- Products table
 CREATE TABLE IF NOT EXISTS products (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(128) NOT NULL,
+    name VARCHAR(255) NOT NULL,
     description TEXT,
     price DECIMAL(10, 2) NOT NULL,
     quantity INT NOT NULL CHECK (quantity >= 0), -- Ensure non-negative quantity
