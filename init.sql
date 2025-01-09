@@ -1,6 +1,5 @@
 -- Create the database and select it
 CREATE DATABASE IF NOT EXISTS studentswap;
-ALTER DATABASE studentswap CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE studentswap;
 
 -- Users table
@@ -88,7 +87,8 @@ INSERT INTO products(
     179.99,
     12,
     'https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/apple-tv-4k-hero-select-202210_FMT_WHH?wid=640&hei=600&fmt=jpeg&qlt=90&.v=1664896361164'
-), (
+)
+, (
     'Magic Keyboard',
     'A wireless keyboard for your Mac',
     99.99,
