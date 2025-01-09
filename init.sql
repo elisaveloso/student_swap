@@ -87,6 +87,12 @@ INSERT INTO products(
     179.99,
     12,
     'https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/apple-tv-4k-hero-select-202210_FMT_WHH?wid=640&hei=600&fmt=jpeg&qlt=90&.v=1664896361164'
+),(
+    'Küchenmaschine Deluxe',
+    'A multifunctional food processor for your cooking needs',
+    499.99,
+    10,
+    'https://example.com/images/kuechenmaschine.jpg'
 ), (
     'Magic Keyboard',
     'A wireless keyboard for your Mac',
