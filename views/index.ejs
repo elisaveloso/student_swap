@@ -11,11 +11,18 @@
     <%- include('../partials/header.ejs') %>
     
     <main class="container">
+        <!-- Welcome Message -->
+        <div class="text-center mt-5">
+            <h1>Welcome, <%=user.firstName%> <%= user.lastName %>!</h1>
+            <p>You were last online on <strong><%= user.lastOnline %></strong>.</p>
+        </div>
+
         <div class="text-center mt-5">
             <h1>Student Swap</h1>
-            <p>The #1 place to buy and sell things for students</p>
+            <h3>The #1 place to buy and sell things for students</h3>
         </div>
         
+        <!-- Carousel -->
         <div id="carouselExample" class="carousel slide mt-4" data-bs-ride="carousel">
             <div class="carousel-inner">
                 <div class="carousel-item active">
@@ -43,7 +50,6 @@
             </ol>
         </div>
     </main>
-
 
     <script src="/js/bootstrap/bootstrap.bundle.min.js"></script>
     <script src="/js/index.js"></script>
