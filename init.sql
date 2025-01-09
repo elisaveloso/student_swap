@@ -38,67 +38,67 @@ INSERT INTO products(
     'A powerful laptop for professionals',
     1999.99,
     10,
-    'https://via.placeholder.com/150'
+    'https://d2e6ccujb3mkqf.cloudfront.net/6ff668c3-51f8-4772-bad5-683ccac5be04-1_15331178-e3c0-4fe7-9c85-5672098826b9.jpg'
 ), (
     'iPhone 12',
     'The latest iPhone model',
     999.99,
     20,
-    'https://via.placeholder.com/150'
+    'https://assets.mmsrg.com/isr/166325/c1/-/ASSET_MP_108019322/fee_786_587_png'
 ), (
     'iPad Pro',
     'A powerful tablet for professionals',
     799.99,
     15,
-    'https://via.placeholder.com/150'
+    'https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/refurb-ipad-pro-12-wifi-spacegray-2021?wid=1144&hei=1144&fmt=jpeg&qlt=90&.v=1674663706569'
 ), (
     'Apple Watch Series 6',
     'The latest Apple Watch model',
     399.99,
     30,
-    'https://via.placeholder.com/150'
+    'https://m.media-amazon.com/images/I/71Km8qFU0KL.jpg'
 ), (
     'AirPods Pro',
     'The latest AirPods model',
     249.99,
     40,
-    'https://via.placeholder.com/150'
+    'https://m.media-amazon.com/images/I/61sRKTAfrhL._AC_UF1000,1000_QL80_.jpg'
 ), (
     'iMac',
     'A powerful desktop computer',
     1799.99,
     5,
-    'https://via.placeholder.com/150'
+    'https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/refurb-imac-24-touch-id-purple-202402?wid=1000&hei=1000&fmt=jpeg&qlt=95&.v=1709178834593'
 ), (
     'Mac Mini',
     'A compact desktop computer',
     699.99,
     8,
-    'https://via.placeholder.com/150'
+    'https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/mac-mini-og-202410?wid=1200&hei=630&fmt=jpeg&qlt=95&.v=1729476438669'
 ), (
     'HomePod Mini',
     'A smart speaker for your home',
     99.99,
     25,
-    'https://via.placeholder.com/150'
+    'https://static.bueroplus.de/img/13/8/Zoom_m2569093.jpg?width=800&height=800&fit=contain&bg=ffffff'
 ), (
     'Apple TV 4K',
     'A streaming device for your TV',
     179.99,
     12,
-    'https://via.placeholder.com/150'
+    'https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/apple-tv-4k-hero-select-202210_FMT_WHH?wid=640&hei=600&fmt=jpeg&qlt=90&.v=1664896361164'
 ), (
     'Magic Keyboard',
     'A wireless keyboard for your Mac',
     99.99,
     20,
-    'https://via.placeholder.com/150'
+    'https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/MXCL3RS_AV3?wid=1144&hei=1144&fmt=jpeg&qlt=90&.v=1730833503924'
 ), (
     'Magic Mouse',
     'A wireless mouse for your Mac',
     79.99,
     15,
-    'https://via.placeholder.com/150'
+    'https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/MXK53?wid=2000&hei=2000&fmt=jpeg&qlt=95&.v=1730508286345'
 );
 
 -- Carts table (links to users)
