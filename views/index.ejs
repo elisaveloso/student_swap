@@ -15,7 +15,17 @@
         <% if (user)  {%>
             <div class="text-center mt-5">
                 <h1>Welcome, <%=user.firstName%> <%= user.lastName %>!</h1>
-                <p>You were last online on <strong><%= new Date(user.lastLogin).toLocaleDateString('en-GB') %></strong>.</p>
+                <p>
+                    You were last online on 
+                    <script>
+                        const formatDate = (timestamp) => {
+                            const date = new Date('<%= user.lastLogin %>');
+                            const options = { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' };
+                            document.write(new Intl.DateTimeFormat('en-GB', options).format(date));
+                        };
+                        formatDate();
+                    </script>.
+                </p>
             </div>
         <% } %>
 
