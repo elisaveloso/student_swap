@@ -19,7 +19,7 @@
             <img src="<%= products[i].imageURL %>" alt="image <%= i+1 %>" >
             <p class="description"><%= products[i].description %></p>
             <p class="price">Price: €<%= products[i].price %></p>
-            <p>Quantity: <span id="stock-<%= i+1 %>"><%= products[i].quantity %></span></p>
+            <p>Stock: <span id="stock-<%= i+1 %>"><%= products[i].quantity %></span></p>
 
             <div class="quantity-selector">
                 <button class="decrement">-</button>

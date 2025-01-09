@@ -9,16 +9,17 @@
 <body>
     <%- include('../partials/header.ejs') %>
     <h1>Checkout</h1>
-    <!-- Displat all the items in the cart -->
-    <% for (let i = 0; i < cartItems.length; i++) { %>
-        <div class="item" data-item-id="<%=cartItems[i].id%>">
-            <p>Name: <%=cartItems[i].name%></p>
-            <p>Price: $<%=cartItems[i].price%></p>
-            <p>Quantity: <%=cartItems[i].quantity%></p>
-            <p>______________________________</p>
-            $<span class="item-total-price"><%=cartItems[i].total%></span></p>
-        </div>
-    <% } %>
+    <!-- Display all the items in the cart -->
+    <div class="items">
+        <% for (let i = 0; i < cartItems.length; i++) { %>
+            <div class="item" data-item-id="<%=cartItems[i].id%>">
+                <p>Name: <%=cartItems[i].name%></p>
+                <p>Price: $<%=cartItems[i].price%></p>
+                <p>Quantity: <%=cartItems[i].quantity%></p>
+                <span class="item-total-price">$<%=cartItems[i].total%></span></p>
+            </div>
+        <% } %>
+    </div>
     <p>Subtotal: <span class="subtotal"><%=totalPrice%></span></p>
     <p>Shipping cost: <span class="shipping-cost">0</span></p>
     <p>Total price: <span class="total-price"><%=totalPrice%></span></p>

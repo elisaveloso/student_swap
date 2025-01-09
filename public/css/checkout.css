@@ -1,5 +1,17 @@
-.item{
+body{
+    padding-left: 50px;
+}
+
+.items {
+    display: flex;
+    flex-direction: column;
     width: 50%;
-    margin-bottom: 5vh;
-    border: 1px solid black;
+}
+
+.item{
+    display: flex;
+    border: 2px solid black;
+    justify-content: space-evenly; 
+    width: 100%;
+    margin: 5px;
 }
