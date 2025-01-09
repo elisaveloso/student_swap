@@ -8,47 +8,41 @@
 </head>
 <body>
     <%- include('../partials/header.ejs') %>
-    <h1>Checkout</h1>
-    <!-- Display all the items in the cart -->
-    <div class="items">
-        <% for (let i = 0; i < cartItems.length; i++) { %>
-            <div class="item" data-item-id="<%=cartItems[i].id%>">
-                <p>Name: <%=cartItems[i].name%></p>
-                <p>Price: $<%=cartItems[i].price%></p>
-                <p>Quantity: <%=cartItems[i].quantity%></p>
-                <span class="item-total-price">$<%=cartItems[i].total%></span></p>
+    <div class="container">
+        <h1>Checkout</h1>
+        <!-- Display all the items in the cart -->
+        <div class="items">
+            <% for (let i = 0; i < cartItems.length; i++) { %>
+                <div class="item" data-item-id="<%=cartItems[i].id%>">
+                    <p>Name: <%=cartItems[i].name%></p>
+                    <p>Price: €<%=cartItems[i].price%></p>
+                    <p>Quantity: <%=cartItems[i].quantity%></p>
+                    <span class="item-total-price">€<%=cartItems[i].total%></span></p>
+                </div>
+            <% } %>
+        </div>
+        <div class=""></div>
+        <p>Subtotal: €<span class="subtotal"><%=totalPrice%></span></p>
+        <p>Shipping cost: €<span class="shipping-cost">0</span></p>
+        <p>Total price: €<span class="total-price"><%=totalPrice%></span></p>
+        <form action="/order" method="POST">
+            <label for="shippingMethod">Shipping method:</label>
+            <div id="shippingMethod" required>
+                <label>
+                    <input type="radio" name="shippingMethod" value="DPD" data-cost="11"> DPD (11€)
+                </label>
+                <label>
+                    <input type="radio" name="shippingMethod" value="DHL" data-cost="30"> DHL (30€)
+                </label>
+                <label>
+                    <input type="radio" name="shippingMethod" value="DHL Express" data-cost="74"> DHL Express (74€)
+                </label>
             </div>
-        <% } %>
+            <input type="checkbox" name="data-protection" id="data-protection" required>
+            <label for="data-protection">I accept the <a href="/data-protection">data protection</a></label>
+            <button type="submit">Pay</button>
+        </form>
     </div>
-    <p>Subtotal: <span class="subtotal"><%=totalPrice%></span></p>
-    <p>Shipping cost: <span class="shipping-cost">0</span></p>
-    <p>Total price: <span class="total-price"><%=totalPrice%></span></p>
-    <form action="/order" method="POST">
-        <label for="shippingMethod">Shipping method:</label>
-        <div id="shippingMethod" required>
-            <label>
-                <input type="radio" name="shippingMethod" value="DPD" data-cost="11"> DPD (11€)
-            </label>
-            <label>
-                <input type="radio" name="shippingMethod" value="DHL" data-cost="30"> DHL (30€)
-            </label>
-            <label>
-                <input type="radio" name="shippingMethod" value="DHL Express" data-cost="74"> DHL Express (74€)
-            </label>
-        </div>
-        <label for="payment-method">Payment method:</label>
-        <div id="payment-method">
-            <label>
-                <input type="radio" name="payment-method" value="credit-card"> Credit card
-            </label>
-            <label>
-                <input type="radio" name="payment-method" value="paypal"> PayPal
-            </label>
-        </div>
-        <input type="checkbox" name="data-protection" id="data-protection" required>
-        <label for="data-protection">I accept the <a href="/data-protection">data protection</a></label>
-        <button type="submit">Pay</button>
-    </form>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="/js/checkout.js"></script>
 </body>
