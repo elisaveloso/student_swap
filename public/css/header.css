@@ -1,4 +1,4 @@
-nav{
+nav {
     width: 100%;
     display: flex;
     justify-content: space-between;
@@ -6,20 +6,29 @@ nav{
     padding: 10px 20px;
     background-color: #401c93;
     color: white;
+    position: fixed; /* Fix the header at the top */
+    top: 0; /* Position it at the top */
+    left: 0; /* Ensure it spans the full width */
+    z-index: 1000; /* Ensure it stays above other content */
+    border-bottom: 2px solid black;
 }
 
-nav a{
+body {
+    padding-top: 62px; /* Add padding to avoid content being hidden behind the fixed header */
+}
+
+nav a {
     font-size: 1.5rem;
     font-weight: 700;
     color: white;
     text-decoration: none;
 }
 
-nav a:hover{
+nav a:hover {
     color: #dddddd;
 }
 
-.right{
+.right {
     width: 40%;
     display: flex;
     justify-content: space-evenly;
@@ -33,9 +42,6 @@ a.cart-link {
 
 a.cart-link svg {
     margin-right: 5px; /* Adjust the spacing as needed */
-}
-
-a.cart-link svg {
     width: 30px;
     height: 30px;
 }

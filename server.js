@@ -90,7 +90,7 @@ app.get('/login', (req, res) => {
 
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
-    let redirectValue = '/products';
+    let redirectValue = '/';
     const query = 'SELECT * FROM users WHERE email = ? AND hashedPassword = ?';
     const values = [email, password];
     

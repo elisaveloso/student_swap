@@ -5,13 +5,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const email = document.getElementById("email").value;
         console.log(email);
         console.log(validateEmail(email));
-        // Validate email
-        if (validateEmail(email)) {
+        // Validate email and see if a password was entered
+        if (validateEmail(email) && event.target.password.value.length >= 1) {
             document.getElementById("error").textContent = "";
             hashPassword(event);
         } else {
-            document.getElementById("error").textContent = "Email is invalid";
-            event.preventDefault();
+            if (event.target.password.value.length < 1) {
+                document.getElementById("error").textContent = "Password is required";
+                event.preventDefault();
+            } else
+            {
+                document.getElementById("error").textContent = "Email is invalid";
+                event.preventDefault();
+            }
         }
     };
 
