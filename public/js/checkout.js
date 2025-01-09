@@ -9,8 +9,8 @@ document.addEventListener('DOMContentLoaded', function() {
             var shippingCost = parseFloat(this.getAttribute('data-cost'));
 
             // Update the shipping cost and total price
-            shippingCostElement.textContent = shippingCost + '€';
-            totalPriceElement.textContent = (subtotal + shippingCost) + '€';
+            shippingCostElement.textContent = shippingCost;
+            totalPriceElement.textContent = (subtotal + shippingCost);
         });
     });
 });

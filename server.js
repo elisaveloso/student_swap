@@ -604,17 +604,24 @@ app.get('/order/:id', isAuthenticated, async (req, res) => {
 
     console.log('Order:', orderId, 'User:', userId);
 
+
     const [order] = await db.execute('SELECT * FROM orders WHERE id = ? AND userId = ?', [orderId, userId]);
 
     if (order.length === 0) {
         return res.status(404).send('Order not found');
     }
 
+
     const [orderItems] = await db.execute('SELECT * FROM orderItems WHERE orderId = ?', [orderId]);
     const items = [];
     for (let item of orderItems) {
         const [product] = await db.execute('SELECT name FROM products WHERE id = ?', [item.productId]);
         items.push({ name: product[0].name, quantity: item.quantity, price: item.priceAtPurchase, subtotal: item.quantity * item.priceAtPurchase });
+        //check if there's enough left in stock
+        const [productQuantity] = await db.execute('SELECT quantity FROM products WHERE id = ?', [item.productId]);
+        if (productQuantity[0].quantity < item.quantity) {
+            return res.status(400).send(`Not enough of ${product[0].name} in stock`);
+        }
     }
 
     const [ totalPriceResult ] = await db.execute('SELECT totalAmount FROM orders WHERE id = ?', [orderId]);
