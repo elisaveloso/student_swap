@@ -50,10 +50,10 @@ const db = mysql.createPool({
 })();
 
 
-//insert a product into the database
-//test if the product already exists
+//test inserting a new product into the database from the server side
 (async () => {
     try {
+        //test if the product already exists
         const [results] = await db.execute('SELECT * FROM products WHERE name = ?', ['Küchenmaschine Deluxe']);
         if (!results.length > 0) {
             (async () => {
@@ -698,7 +698,10 @@ app.get('/confirmation', isAuthenticated, async (req, res) => {
     const totalPrice = totalPriceResult[0].totalAmount;
     const shippingCost = shippingCostResult[0].shippingCost;
 
-        res.render('confirmation.ejs', { orderId, items, totalPrice, shippingCost });
+    //clear the cart
+    req.session.cart = { quantity: 0, items: [], totalPrice: 0 };
+
+    res.render('confirmation.ejs', { orderId, items, totalPrice, shippingCost });
 });
 
 app.get('/online-users', async (req, res) => {
