@@ -422,20 +422,22 @@ app.post("/update-cart", isAuthenticated, async (req, res) => {
         const itemPrice = product[0].price * discount;
         const itemTotal = parseFloat(itemPrice * quantity).toFixed(2);
         const discountPercentage = Math.round((1 - discount) * 100); // Calculate discount percentage
-
+        console.log(quantity)
         await db.execute("UPDATE cartItems SET quantity = ? WHERE productId = ?", [quantity, itemId]);
 
         const cartId = req.session.cart.id;
         req.session.cart.totalPrice = await getTotalPrice(cartId);
         req.session.cart.quantity = await getQuantities();
-
+        
         req.session.cart.items = req.session.cart.items.map((item) => {
-            if (item.id === itemId) {
+            console.log(item.id, itemId)
+            if (parseInt(item.id) === parseInt(itemId)) {
                 item.quantity = quantity;
                 item.total = itemTotal;
                 item.discountPercentage = discountPercentage; // Update discount percentage
                 item.price = itemPrice; // Update item price
             }
+            //console.log(item)
             return item;
         });
 
@@ -522,6 +524,7 @@ app.get('/checkout', isAuthenticated, (req, res) => {
     }
 
     const cartItems = req.session.cart.items;
+    console.log(cartItems);
     const totalPrice = req.session.cart.totalPrice;
     res.render('checkout.ejs', { cartItems, totalPrice });
 

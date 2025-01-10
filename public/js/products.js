@@ -49,7 +49,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 const data = await response.json();
                 const cartQuantity = document.querySelector(".cart-link span");
                 cartQuantity.textContent = data.totalQuantity; // Update cart quantity in header
-                alert("Product added to cart!");
             } else {
                 alert("Failed to add product to cart.");
             }
